@@ -20,6 +20,7 @@
                 <flux:navlist.group :heading="__('Administration')" class="grid">
                     <flux:navlist.item icon="users" :href="route('admin.users')" :current="request()->routeIs('admin.users')" wire:navigate>{{ __('Users') }}</flux:navlist.item>
                     <flux:navlist.item icon="cog-6-tooth" :href="route('admin.settings')" :current="request()->routeIs('admin.settings')" wire:navigate>{{ __('Settings') }}</flux:navlist.item>
+                    <flux:navlist.item icon="cloud" :href="route('admin.evolution-api')" :current="request()->routeIs('admin.evolution-api')" wire:navigate>{{ __('Evolution API') }}</flux:navlist.item>
                 </flux:navlist.group>
                 @endif
 

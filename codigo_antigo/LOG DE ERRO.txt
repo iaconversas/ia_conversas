@@ -1,0 +1,372 @@
+Carregando instâncias...
+evolution-manager:999 Evolution URL: https://evolution.iaconversas.com
+evolution-manager:1000 API Key: Configurada
+evolution-manager:1247 Atualizando lista de instâncias...
+evolution-manager:1255 Refresh Instances - Response Status: 200 
+evolution-manager:1262 Refresh Instances - Response text: [{"id":"5d1bdab6-9068-4177-b7d2-0728d6f1bcdf","name":"Prof","connectionStatus":"open","ownerJid":"553184739827@s.whatsapp.net","profileName":"Eduardo Fernandes","profilePicUrl":"https://pps.whatsapp.net/v/t61.24694-24/356457323_1767851976946267_2496718105671821026_n.jpg?ccb=11-4&oh=01_Q5Aa2AF3uGlP_3FPFDLfOHVndM-uZjrvSEk9_YpNemiQxdOjAg&oe=689E2A43&_nc_sid=5e03e0&_nc_cat=105","integration":"WHATSAPP-BAILEYS","number":null,"businessId":null,"token":"6FCAB237-7B3F-4429-A615-04DE0DE38672","clientName
+evolution-manager:1273 Instâncias atualizadas (refreshInstances): (2) [{…}, {…}]
+evolution-manager:1274 Tipo de dados (refreshInstances): object
+evolution-manager:1275 É array? (refreshInstances) true
+evolution-manager:1280 RefreshInstances - Instância 0: {
+  "id": "5d1bdab6-9068-4177-b7d2-0728d6f1bcdf",
+  "name": "Prof",
+  "connectionStatus": "open",
+  "ownerJid": "553184739827@s.whatsapp.net",
+  "profileName": "Eduardo Fernandes",
+  "profilePicUrl": "https://pps.whatsapp.net/v/t61.24694-24/356457323_1767851976946267_2496718105671821026_n.jpg?ccb=11-4&oh=01_Q5Aa2AF3uGlP_3FPFDLfOHVndM-uZjrvSEk9_YpNemiQxdOjAg&oe=689E2A43&_nc_sid=5e03e0&_nc_cat=105",
+  "integration": "WHATSAPP-BAILEYS",
+  "number": null,
+  "businessId": null,
+  "token": "6FCAB237-7B3F-4429-A615-04DE0DE38672",
+  "clientName": "evolution",
+  "disconnectionReasonCode": null,
+  "disconnectionObject": null,
+  "disconnectionAt": null,
+  "createdAt": "2025-07-31T03:32:26.050Z",
+  "updatedAt": "2025-08-04T22:08:28.023Z",
+  "Chatwoot": null,
+  "Proxy": null,
+  "Rabbitmq": null,
+  "Nats": null,
+  "Sqs": null,
+  "Websocket": null,
+  "Setting": {
+    "id": "cmdqu9s931hcbpe4cbaju6x7z",
+    "rejectCall": false,
+    "msgCall": "",
+    "groupsIgnore": false,
+    "alwaysOnline": false,
+    "readMessages": false,
+    "readStatus": false,
+    "syncFullHistory": false,
+    "wavoipToken": "",
+    "createdAt": "2025-07-31T03:32:26.056Z",
+    "updatedAt": "2025-07-31T03:32:26.056Z",
+    "instanceId": "5d1bdab6-9068-4177-b7d2-0728d6f1bcdf"
+  },
+  "_count": {
+    "Message": 76017,
+    "Contact": 2008,
+    "Chat": 4266
+  }
+}
+evolution-manager:1281 RefreshInstances - Chaves disponíveis na instância 0: (24) ['id', 'name', 'connectionStatus', 'ownerJid', 'profileName', 'profilePicUrl', 'integration', 'number', 'businessId', 'token', 'clientName', 'disconnectionReasonCode', 'disconnectionObject', 'disconnectionAt', 'createdAt', 'updatedAt', 'Chatwoot', 'Proxy', 'Rabbitmq', 'Nats', 'Sqs', 'Websocket', 'Setting', '_count']
+evolution-manager:1280 RefreshInstances - Instância 1: {
+  "id": "b856190d-afa0-4d9c-be5d-e2059773791c",
+  "name": "isso é um teste",
+  "connectionStatus": "open",
+  "ownerJid": "553182982752@s.whatsapp.net",
+  "profileName": "Eduardo Fernandes",
+  "profilePicUrl": "https://pps.whatsapp.net/v/t61.24694-24/429915944_399878246534812_2706345888034341581_n.jpg?ccb=11-4&oh=01_Q5Aa2AG6qqBYqfAETstEoMRXYyx12aWEjFB3b1pgdd6UY0Cx5w&oe=689E515F&_nc_sid=5e03e0&_nc_cat=109",
+  "integration": "WHATSAPP-BAILEYS",
+  "number": null,
+  "businessId": null,
+  "token": "941ABB96-4989-459D-9C4B-30F72D7DB9C1",
+  "clientName": "evolution",
+  "disconnectionReasonCode": null,
+  "disconnectionObject": null,
+  "disconnectionAt": null,
+  "createdAt": "2025-08-04T20:56:05.449Z",
+  "updatedAt": "2025-08-04T22:14:07.582Z",
+  "Chatwoot": null,
+  "Proxy": null,
+  "Rabbitmq": null,
+  "Nats": null,
+  "Sqs": null,
+  "Websocket": null,
+  "Setting": {
+    "id": "cmdxlbccv52nupe4c3qbctfk4",
+    "rejectCall": false,
+    "msgCall": "",
+    "groupsIgnore": false,
+    "alwaysOnline": false,
+    "readMessages": false,
+    "readStatus": false,
+    "syncFullHistory": false,
+    "wavoipToken": "",
+    "createdAt": "2025-08-04T20:56:05.455Z",
+    "updatedAt": "2025-08-04T20:56:05.455Z",
+    "instanceId": "b856190d-afa0-4d9c-be5d-e2059773791c"
+  },
+  "_count": {
+    "Message": 16109,
+    "Contact": 400,
+    "Chat": 636
+  }
+}
+evolution-manager:1281 RefreshInstances - Chaves disponíveis na instância 1: (24) ['id', 'name', 'connectionStatus', 'ownerJid', 'profileName', 'profilePicUrl', 'integration', 'number', 'businessId', 'token', 'clientName', 'disconnectionReasonCode', 'disconnectionObject', 'disconnectionAt', 'createdAt', 'updatedAt', 'Chatwoot', 'Proxy', 'Rabbitmq', 'Nats', 'Sqs', 'Websocket', 'Setting', '_count']0: "id"1: "name"2: "connectionStatus"3: "ownerJid"4: "profileName"5: "profilePicUrl"6: "integration"7: "number"8: "businessId"9: "token"10: "clientName"11: "disconnectionReasonCode"12: "disconnectionObject"13: "disconnectionAt"14: "createdAt"15: "updatedAt"16: "Chatwoot"17: "Proxy"18: "Rabbitmq"19: "Nats"20: "Sqs"21: "Websocket"22: "Setting"23: "_count"length: 24[[Prototype]]: Array(0)at: ƒ at()concat: ƒ concat()constructor: ƒ Array()copyWithin: ƒ copyWithin()entries: ƒ entries()every: ƒ every()fill: ƒ fill()filter: ƒ filter()find: ƒ find()findIndex: ƒ findIndex()findLast: ƒ findLast()findLastIndex: ƒ findLastIndex()flat: ƒ flat()flatMap: ƒ flatMap()forEach: ƒ forEach()includes: ƒ includes()indexOf: ƒ indexOf()join: ƒ join()keys: ƒ keys()lastIndexOf: ƒ lastIndexOf()length: 0map: ƒ map()pop: ƒ pop()push: ƒ push()reduce: ƒ reduce()reduceRight: ƒ reduceRight()reverse: ƒ reverse()shift: ƒ shift()slice: ƒ slice()some: ƒ some()sort: ƒ sort()splice: ƒ splice()toLocaleString: ƒ toLocaleString()toReversed: ƒ toReversed()toSorted: ƒ toSorted()toSpliced: ƒ toSpliced()toString: ƒ toString()unshift: ƒ unshift()values: ƒ values()with: ƒ with()Symbol(Symbol.iterator): ƒ values()Symbol(Symbol.unscopables): {at: true, copyWithin: true, entries: true, fill: true, find: true, …}[[Prototype]]: Object
+evolution-manager:1299 Exibindo tabela de instâncias: (2) [{…}, {…}]
+evolution-manager:1326 Estrutura completa da instância: {
+  "id": "5d1bdab6-9068-4177-b7d2-0728d6f1bcdf",
+  "name": "Prof",
+  "connectionStatus": "open",
+  "ownerJid": "553184739827@s.whatsapp.net",
+  "profileName": "Eduardo Fernandes",
+  "profilePicUrl": "https://pps.whatsapp.net/v/t61.24694-24/356457323_1767851976946267_2496718105671821026_n.jpg?ccb=11-4&oh=01_Q5Aa2AF3uGlP_3FPFDLfOHVndM-uZjrvSEk9_YpNemiQxdOjAg&oe=689E2A43&_nc_sid=5e03e0&_nc_cat=105",
+  "integration": "WHATSAPP-BAILEYS",
+  "number": null,
+  "businessId": null,
+  "token": "6FCAB237-7B3F-4429-A615-04DE0DE38672",
+  "clientName": "evolution",
+  "disconnectionReasonCode": null,
+  "disconnectionObject": null,
+  "disconnectionAt": null,
+  "createdAt": "2025-07-31T03:32:26.050Z",
+  "updatedAt": "2025-08-04T22:08:28.023Z",
+  "Chatwoot": null,
+  "Proxy": null,
+  "Rabbitmq": null,
+  "Nats": null,
+  "Sqs": null,
+  "Websocket": null,
+  "Setting": {
+    "id": "cmdqu9s931hcbpe4cbaju6x7z",
+    "rejectCall": false,
+    "msgCall": "",
+    "groupsIgnore": false,
+    "alwaysOnline": false,
+    "readMessages": false,
+    "readStatus": false,
+    "syncFullHistory": false,
+    "wavoipToken": "",
+    "createdAt": "2025-07-31T03:32:26.056Z",
+    "updatedAt": "2025-07-31T03:32:26.056Z",
+    "instanceId": "5d1bdab6-9068-4177-b7d2-0728d6f1bcdf"
+  },
+  "_count": {
+    "Message": 76017,
+    "Contact": 2008,
+    "Chat": 4266
+  }
+}
+evolution-manager:1339 Nome encontrado em instance.name: Prof
+evolution-manager:1349 Processando instância: Prof, status: open
+evolution-manager:1326 Estrutura completa da instância: {
+  "id": "b856190d-afa0-4d9c-be5d-e2059773791c",
+  "name": "isso é um teste",
+  "connectionStatus": "open",
+  "ownerJid": "553182982752@s.whatsapp.net",
+  "profileName": "Eduardo Fernandes",
+  "profilePicUrl": "https://pps.whatsapp.net/v/t61.24694-24/429915944_399878246534812_2706345888034341581_n.jpg?ccb=11-4&oh=01_Q5Aa2AG6qqBYqfAETstEoMRXYyx12aWEjFB3b1pgdd6UY0Cx5w&oe=689E515F&_nc_sid=5e03e0&_nc_cat=109",
+  "integration": "WHATSAPP-BAILEYS",
+  "number": null,
+  "businessId": null,
+  "token": "941ABB96-4989-459D-9C4B-30F72D7DB9C1",
+  "clientName": "evolution",
+  "disconnectionReasonCode": null,
+  "disconnectionObject": null,
+  "disconnectionAt": null,
+  "createdAt": "2025-08-04T20:56:05.449Z",
+  "updatedAt": "2025-08-04T22:14:07.582Z",
+  "Chatwoot": null,
+  "Proxy": null,
+  "Rabbitmq": null,
+  "Nats": null,
+  "Sqs": null,
+  "Websocket": null,
+  "Setting": {
+    "id": "cmdxlbccv52nupe4c3qbctfk4",
+    "rejectCall": false,
+    "msgCall": "",
+    "groupsIgnore": false,
+    "alwaysOnline": false,
+    "readMessages": false,
+    "readStatus": false,
+    "syncFullHistory": false,
+    "wavoipToken": "",
+    "createdAt": "2025-08-04T20:56:05.455Z",
+    "updatedAt": "2025-08-04T20:56:05.455Z",
+    "instanceId": "b856190d-afa0-4d9c-be5d-e2059773791c"
+  },
+  "_count": {
+    "Message": 16109,
+    "Contact": 400,
+    "Chat": 636
+  }
+}
+evolution-manager:1339 Nome encontrado em instance.name: isso é um teste
+evolution-manager:1349 Processando instância: isso é um teste, status: open
+evolution-manager:1009 Load Instances - Response Status: 200 
+evolution-manager:1016 Load Instances - Response text: [{"id":"5d1bdab6-9068-4177-b7d2-0728d6f1bcdf","name":"Prof","connectionStatus":"open","ownerJid":"553184739827@s.whatsapp.net","profileName":"Eduardo Fernandes","profilePicUrl":"https://pps.whatsapp.net/v/t61.24694-24/356457323_1767851976946267_2496718105671821026_n.jpg?ccb=11-4&oh=01_Q5Aa2AF3uGlP_3FPFDLfOHVndM-uZjrvSEk9_YpNemiQxdOjAg&oe=689E2A43&_nc_sid=5e03e0&_nc_cat=105","integration":"WHATSAPP-BAILEYS","number":null,"businessId":null,"token":"6FCAB237-7B3F-4429-A615-04DE0DE38672","clientName
+evolution-manager:1027 Instâncias carregadas: (2) [{…}, {…}]
+evolution-manager:1043 Exibindo lista de instâncias: (2) [{…}, {…}]
+evolution-manager:1059 Filtro "Apenas conectadas": false
+evolution-manager:1069 Instâncias filtradas: (2) [{…}, {…}]
+evolution-manager:1077 Estrutura completa da instância (webhook): {
+  "id": "5d1bdab6-9068-4177-b7d2-0728d6f1bcdf",
+  "name": "Prof",
+  "connectionStatus": "open",
+  "ownerJid": "553184739827@s.whatsapp.net",
+  "profileName": "Eduardo Fernandes",
+  "profilePicUrl": "https://pps.whatsapp.net/v/t61.24694-24/356457323_1767851976946267_2496718105671821026_n.jpg?ccb=11-4&oh=01_Q5Aa2AF3uGlP_3FPFDLfOHVndM-uZjrvSEk9_YpNemiQxdOjAg&oe=689E2A43&_nc_sid=5e03e0&_nc_cat=105",
+  "integration": "WHATSAPP-BAILEYS",
+  "number": null,
+  "businessId": null,
+  "token": "6FCAB237-7B3F-4429-A615-04DE0DE38672",
+  "clientName": "evolution",
+  "disconnectionReasonCode": null,
+  "disconnectionObject": null,
+  "disconnectionAt": null,
+  "createdAt": "2025-07-31T03:32:26.050Z",
+  "updatedAt": "2025-08-04T22:08:28.023Z",
+  "Chatwoot": null,
+  "Proxy": null,
+  "Rabbitmq": null,
+  "Nats": null,
+  "Sqs": null,
+  "Websocket": null,
+  "Setting": {
+    "id": "cmdqu9s931hcbpe4cbaju6x7z",
+    "rejectCall": false,
+    "msgCall": "",
+    "groupsIgnore": false,
+    "alwaysOnline": false,
+    "readMessages": false,
+    "readStatus": false,
+    "syncFullHistory": false,
+    "wavoipToken": "",
+    "createdAt": "2025-07-31T03:32:26.056Z",
+    "updatedAt": "2025-07-31T03:32:26.056Z",
+    "instanceId": "5d1bdab6-9068-4177-b7d2-0728d6f1bcdf"
+  },
+  "_count": {
+    "Message": 76017,
+    "Contact": 2008,
+    "Chat": 4266
+  }
+}
+evolution-manager:1090 Nome encontrado em instance.name (webhook): Prof
+evolution-manager:1100 Processando instância (webhook): Prof, status: open
+evolution-manager:1077 Estrutura completa da instância (webhook): {
+  "id": "b856190d-afa0-4d9c-be5d-e2059773791c",
+  "name": "isso é um teste",
+  "connectionStatus": "open",
+  "ownerJid": "553182982752@s.whatsapp.net",
+  "profileName": "Eduardo Fernandes",
+  "profilePicUrl": "https://pps.whatsapp.net/v/t61.24694-24/429915944_399878246534812_2706345888034341581_n.jpg?ccb=11-4&oh=01_Q5Aa2AG6qqBYqfAETstEoMRXYyx12aWEjFB3b1pgdd6UY0Cx5w&oe=689E515F&_nc_sid=5e03e0&_nc_cat=109",
+  "integration": "WHATSAPP-BAILEYS",
+  "number": null,
+  "businessId": null,
+  "token": "941ABB96-4989-459D-9C4B-30F72D7DB9C1",
+  "clientName": "evolution",
+  "disconnectionReasonCode": null,
+  "disconnectionObject": null,
+  "disconnectionAt": null,
+  "createdAt": "2025-08-04T20:56:05.449Z",
+  "updatedAt": "2025-08-04T22:14:07.582Z",
+  "Chatwoot": null,
+  "Proxy": null,
+  "Rabbitmq": null,
+  "Nats": null,
+  "Sqs": null,
+  "Websocket": null,
+  "Setting": {
+    "id": "cmdxlbccv52nupe4c3qbctfk4",
+    "rejectCall": false,
+    "msgCall": "",
+    "groupsIgnore": false,
+    "alwaysOnline": false,
+    "readMessages": false,
+    "readStatus": false,
+    "syncFullHistory": false,
+    "wavoipToken": "",
+    "createdAt": "2025-08-04T20:56:05.455Z",
+    "updatedAt": "2025-08-04T20:56:05.455Z",
+    "instanceId": "b856190d-afa0-4d9c-be5d-e2059773791c"
+  },
+  "_count": {
+    "Message": 16109,
+    "Contact": 400,
+    "Chat": 636
+  }
+}
+evolution-manager:1090 Nome encontrado em instance.name (webhook): isso é um teste
+evolution-manager:1100 Processando instância (webhook): isso é um teste, status: open
+evolution-manager:1132 Atualizando webhooks para instâncias selecionadas: (2) ['Prof', 'isso é um teste']
+evolution-manager:1136 Atualizando webhook para instância: Prof
+evolution-manager:1137 URL do webhook: https://n8n.iaconversas.com/webhook/aquecedor
+evolution-manager:1138 Fazendo requisição direta para Evolution API
+evolution-manager:1139 URL da Evolution API: https://evolution.iaconversas.com
+evolution-manager:1140 API Key: Configurada
+evolution-manager:1168 URL da requisição: https://evolution.iaconversas.com/webhook/set/Prof
+evolution-manager:1169 Body da requisição (objeto): {url: 'https://n8n.iaconversas.com/webhook/aquecedor', webhook_by_events: false, webhook_base64: false, enabled: true, events: Array(6)}
+evolution-manager:1170 Body da requisição (JSON): {
+  "url": "https://n8n.iaconversas.com/webhook/aquecedor",
+  "webhook_by_events": false,
+  "webhook_base64": false,
+  "enabled": true,
+  "events": [
+    "APPLICATION_STARTUP",
+    "QRCODE_UPDATED",
+    "CONNECTION_UPDATE",
+    "MESSAGES_UPSERT",
+    "MESSAGES_UPDATE",
+    "SEND_MESSAGE"
+  ]
+}
+evolution-manager:1171 URL final do webhook: https://n8n.iaconversas.com/webhook/aquecedor
+evolution-manager:1174 URL do webhook após limpeza: https://n8n.iaconversas.com/webhook/aquecedor
+main.js?attr=kdk9SY3ot4FSvo5okln65RXz8jv6ndNOjf-Er7WK3rQjzRsXTKHIvpk6e5nrRiJTDxRzs4gPmJF1rKpUVDR4P7d3adcmckvkHPWEZFB3Yqs:3478  POST https://evolution.iaconversas.com/webhook/set/Prof 400 (Bad Request)
+fetchCallImpl @ main.js?attr=kdk9SY3ot4FSvo5okln65RXz8jv6ndNOjf-Er7WK3rQjzRsXTKHIvpk6e5nrRiJTDxRzs4gPmJF1rKpUVDR4P7d3adcmckvkHPWEZFB3Yqs:3478
+fetch @ main.js?attr=kdk9SY3ot4FSvo5okln65RXz8jv6ndNOjf-Er7WK3rQjzRsXTKHIvpk6e5nrRiJTDxRzs4gPmJF1rKpUVDR4P7d3adcmckvkHPWEZFB3Yqs:3484
+updateWebhooks @ evolution-manager:1183
+onclick @ evolution-manager:690Understand this error
+evolution-manager:1192 Response status para Prof: 400 
+evolution-manager:1193 Response headers: {content-length: '104', content-type: 'application/json; charset=utf-8'}
+evolution-manager:1196 Erro HTTP para Prof: 400 
+updateWebhooks @ evolution-manager:1196
+await in updateWebhooks
+onclick @ evolution-manager:690Understand this error
+evolution-manager:1200 Detalhes do erro para Prof: {"status":400,"error":"Bad Request","response":{"message":[["instance requires property \"webhook\""]]}}
+updateWebhooks @ evolution-manager:1200
+await in updateWebhooks
+onclick @ evolution-manager:690Understand this error
+evolution-manager:1233 Erro ao atualizar webhook para Prof: Error: Erro HTTP: 400 
+    at updateWebhooks (evolution-manager:1202:31)
+updateWebhooks @ evolution-manager:1233
+await in updateWebhooks
+onclick @ evolution-manager:690Understand this error
+evolution-manager:1136 Atualizando webhook para instância: isso é um teste
+evolution-manager:1137 URL do webhook: https://n8n.iaconversas.com/webhook/aquecedor
+evolution-manager:1138 Fazendo requisição direta para Evolution API
+evolution-manager:1139 URL da Evolution API: https://evolution.iaconversas.com
+evolution-manager:1140 API Key: Configurada
+evolution-manager:1168 URL da requisição: https://evolution.iaconversas.com/webhook/set/isso%20%C3%A9%20um%20teste
+evolution-manager:1169 Body da requisição (objeto): {url: 'https://n8n.iaconversas.com/webhook/aquecedor', webhook_by_events: false, webhook_base64: false, enabled: true, events: Array(6)}
+evolution-manager:1170 Body da requisição (JSON): {
+  "url": "https://n8n.iaconversas.com/webhook/aquecedor",
+  "webhook_by_events": false,
+  "webhook_base64": false,
+  "enabled": true,
+  "events": [
+    "APPLICATION_STARTUP",
+    "QRCODE_UPDATED",
+    "CONNECTION_UPDATE",
+    "MESSAGES_UPSERT",
+    "MESSAGES_UPDATE",
+    "SEND_MESSAGE"
+  ]
+}
+evolution-manager:1171 URL final do webhook: https://n8n.iaconversas.com/webhook/aquecedor
+evolution-manager:1174 URL do webhook após limpeza: https://n8n.iaconversas.com/webhook/aquecedor
+main.js?attr=kdk9SY3ot4FSvo5okln65RXz8jv6ndNOjf-Er7WK3rQjzRsXTKHIvpk6e5nrRiJTDxRzs4gPmJF1rKpUVDR4P7d3adcmckvkHPWEZFB3Yqs:3478  POST https://evolution.iaconversas.com/webhook/set/isso%20%C3%A9%20um%20teste 400 (Bad Request)
+fetchCallImpl @ main.js?attr=kdk9SY3ot4FSvo5okln65RXz8jv6ndNOjf-Er7WK3rQjzRsXTKHIvpk6e5nrRiJTDxRzs4gPmJF1rKpUVDR4P7d3adcmckvkHPWEZFB3Yqs:3478
+fetch @ main.js?attr=kdk9SY3ot4FSvo5okln65RXz8jv6ndNOjf-Er7WK3rQjzRsXTKHIvpk6e5nrRiJTDxRzs4gPmJF1rKpUVDR4P7d3adcmckvkHPWEZFB3Yqs:3484
+updateWebhooks @ evolution-manager:1183
+await in updateWebhooks
+onclick @ evolution-manager:690Understand this error
+evolution-manager:1192 Response status para isso é um teste: 400 
+evolution-manager:1193 Response headers: {content-length: '104', content-type: 'application/json; charset=utf-8'}
+evolution-manager:1196 Erro HTTP para isso é um teste: 400 
+updateWebhooks @ evolution-manager:1196
+await in updateWebhooks
+onclick @ evolution-manager:690Understand this error
+evolution-manager:1200 Detalhes do erro para isso é um teste: {"status":400,"error":"Bad Request","response":{"message":[["instance requires property \"webhook\""]]}}
+updateWebhooks @ evolution-manager:1200
+await in updateWebhooks
+onclick @ evolution-manager:690Understand this error
+evolution-manager:1233 Erro ao atualizar webhook para isso é um teste: Error: Erro HTTP: 400 
+    at updateWebhooks (evolution-manager:1202:31)
+updateWebhooks @ evolution-manager:1233
+await in updateWebhooks
+onclick @ evolution-manager:690Understand this error

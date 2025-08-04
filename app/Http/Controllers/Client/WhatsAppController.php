@@ -3,13 +3,23 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Services\EvolutionApiService;
 use Illuminate\Http\Request;
 
 class WhatsAppController extends Controller
 {
+    protected $evolutionApiService;
+
+    public function __construct(EvolutionApiService $evolutionApiService)
+    {
+        $this->evolutionApiService = $evolutionApiService;
+    }
+
     public function evolutionManager()
     {
-        return view('client.evolution-manager');
+        $config = $this->evolutionApiService->getConfig();
+        
+        return view('client.evolution-manager', compact('config'));
     }
 
     public function disparoInteligente()

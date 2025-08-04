@@ -72,8 +72,6 @@ class RolesAndPermissionsSeeder extends Seeder
             [
                 'name' => 'Administrador',
                 'password' => Hash::make('admin123'),
-                'tenant_id' => 'system',
-                'is_admin' => true,
                 'email_verified_at' => now(),
             ]
         );
@@ -88,8 +86,6 @@ class RolesAndPermissionsSeeder extends Seeder
             [
                 'name' => 'Cliente Exemplo',
                 'password' => Hash::make('cliente123'),
-                'tenant_id' => 'tenant_001',
-                'is_admin' => false,
                 'email_verified_at' => now(),
             ]
         );

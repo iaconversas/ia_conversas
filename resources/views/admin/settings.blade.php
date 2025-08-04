@@ -5,6 +5,76 @@
     </flux:header>
 
     <div class="space-y-6">
+        @if(session('success'))
+            <flux:banner variant="success">
+                {{ session('success') }}
+            </flux:banner>
+        @endif
+
+        <!-- Evolution API Configuration -->
+        <flux:card>
+            <flux:card.header>
+                <flux:heading size="lg">Configurações da Evolution API</flux:heading>
+                <flux:subheading>Configure as URLs e chaves de API para integração com Evolution e n8n</flux:subheading>
+            </flux:card.header>
+            
+            <form action="{{ route('admin.evolution-settings.update') }}" method="POST" class="space-y-4">
+                @csrf
+                @method('PUT')
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <flux:field>
+                        <flux:label>URL da Evolution API</flux:label>
+                        <flux:input 
+                            name="evolution_api_url" 
+                            type="url" 
+                            value="{{ old('evolution_api_url', $evolutionSettings['api_url']) }}"
+                            placeholder="https://evolution.iaconversas.com"
+                            required
+                        />
+                        @error('evolution_api_url')
+                            <flux:error>{{ $message }}</flux:error>
+                        @enderror
+                    </flux:field>
+                    
+                    <flux:field>
+                        <flux:label>Chave da API Evolution</flux:label>
+                        <flux:input 
+                            name="evolution_api_key" 
+                            type="password" 
+                            value="{{ old('evolution_api_key', $evolutionSettings['api_key']) }}"
+                            placeholder="Digite a chave da API"
+                            required
+                        />
+                        @error('evolution_api_key')
+                            <flux:error>{{ $message }}</flux:error>
+                        @enderror
+                    </flux:field>
+                </div>
+                
+                <flux:field>
+                    <flux:label>URL do n8n (Webhooks)</flux:label>
+                    <flux:input 
+                        name="n8n_webhook_url" 
+                        type="url" 
+                        value="{{ old('n8n_webhook_url', $evolutionSettings['n8n_url']) }}"
+                        placeholder="https://n8n.iaconversas.com"
+                        required
+                    />
+                    @error('n8n_webhook_url')
+                        <flux:error>{{ $message }}</flux:error>
+                    @enderror
+                </flux:field>
+                
+                <div class="flex justify-end">
+                    <flux:button type="submit" variant="primary">
+                        <flux:icon.check class="size-4" />
+                        Salvar Configurações
+                    </flux:button>
+                </div>
+            </form>
+        </flux:card>
+
         <!-- Roles Section -->
         <flux:card>
             <flux:card.header>

@@ -171,6 +171,9 @@
     </div>
 
     <script>
+        // Configurações do backend
+        const config = @json($config);
+        
         let activeTab = 'qr-code';
         let qrTimer = null;
         let pendingAction = null;
@@ -183,10 +186,18 @@
                 return;
             }
 
+            // Verificar se as configurações estão disponíveis
+            if (!config || !config.n8n_url) {
+                showError('Configurações do n8n não encontradas. Verifique as configurações do sistema.');
+                return;
+            }
+
+            console.log('Iniciando geração de QR Code para instância:', instanceName);
+            console.log('URL do n8n:', config.n8n_url);
             showLoading();
             
             try {
-                const response = await fetch('https://n8n.iaconversas.com/webhook/criar-instancia-evolution', {
+                const response = await fetch(config.n8n_url + '/webhook/criar-instancia-evolution', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -194,7 +205,69 @@
                     body: JSON.stringify({ instanceName })
                 });
 
-                const data = await response.json();
+                console.log('Generate QR - Response Status:', response.status, response.statusText);
+                
+                // Verificar se a resposta é válida
+                if (!response.ok && response.status >= 500) {
+                    throw new Error(`Erro do servidor: ${response.status} ${response.statusText}`);
+                }
+
+                // Verificar o Content-Type da resposta
+                const contentType = response.headers.get('content-type');
+                console.log('Generate QR - Content-Type:', contentType);
+                let data;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.log('Update QR - JSON Response text:', text.substring(0, 200));
+                    
+                    // Verificar se a resposta não está vazia
+                    if (!text || text.trim() === '') {
+                        console.error('Resposta JSON vazia do servidor ao atualizar QR Code');
+                        return;
+                    }
+                    
+                    try {
+                        data = JSON.parse(text);
+                        debugResponse(response, data);
+                    } catch (e) {
+                        console.error('Erro ao fazer parse JSON da resposta:', e);
+                        console.error('Texto da resposta JSON:', text);
+                        return;
+                    }
+                } else if (contentType && contentType.includes('image/')) {
+                    // Se a resposta é uma imagem, converter para base64
+                    console.log('Resposta é uma imagem, convertendo para base64...');
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const base64 = reader.result;
+                        console.log('Base64 gerado:', base64.substring(0, 50) + '...');
+                        displayQRCode({ qrcode: base64 });
+                        startQRTimer();
+                    };
+                    reader.readAsDataURL(blob);
+                    return;
+                } else {
+                    // Tentar como texto primeiro
+                    const text = await response.text();
+                    console.log('Resposta como texto:', text.substring(0, 200));
+                    
+                    // Verificar se a resposta não está vazia
+                    if (!text || text.trim() === '') {
+                        throw new Error('Resposta vazia do servidor');
+                    }
+                    
+                    try {
+                        data = JSON.parse(text);
+                        debugResponse(response, data);
+                    } catch (e) {
+                        // Se não conseguir fazer parse como JSON, tratar como erro
+                        console.error('Erro ao fazer parse JSON:', e);
+                        console.error('Texto da resposta:', text);
+                        throw new Error('Resposta inválida do servidor. Status: ' + response.status + ', Texto: ' + text.substring(0, 100));
+                    }
+                }
                 
                 if (response.ok) {
                     displayQRCode(data);
@@ -215,12 +288,22 @@
             // Suporte a diferentes formatos de resposta
             if (data.qrcode) {
                 if (data.qrcode.startsWith('data:image')) {
-                    display.innerHTML = `<img src="${data.qrcode}" alt="QR Code" class="mx-auto max-w-xs">`;
+                    // Já é um data URL completo
+                    display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="${data.qrcode}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
+                } else if (data.qrcode.startsWith('/9j/') || data.qrcode.startsWith('iVBORw0KGgo')) {
+                    // É base64 puro (JPEG ou PNG)
+                    const mimeType = data.qrcode.startsWith('/9j/') ? 'jpeg' : 'png';
+                    display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="data:image/${mimeType};base64,${data.qrcode}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
                 } else {
+                    // Assumir que é base64 PNG por padrão
                     display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="data:image/png;base64,${data.qrcode}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
                 }
             } else if (data.base64) {
+                // Campo base64 separado
                 display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="data:image/png;base64,${data.base64}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
+            } else if (data.image) {
+                // Campo image
+                display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="${data.image}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
             } else {
                 display.innerHTML = '<p class="text-gray-500">QR Code gerado com sucesso</p>';
             }
@@ -245,7 +328,7 @@
 
         async function updateQRCode() {
             try {
-                const response = await fetch('https://n8n.iaconversas.com/webhook/atualiza-qrcode', {
+                const response = await fetch(config.n8n_url + '/webhook/atualiza-qrcode', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -255,7 +338,64 @@
                     })
                 });
 
-                const data = await response.json();
+                console.log('Update QR - Response Status:', response.status, response.statusText);
+                
+                // Verificar se a resposta é válida
+                if (!response.ok && response.status >= 500) {
+                    console.error(`Erro do servidor ao atualizar QR: ${response.status} ${response.statusText}`);
+                    return;
+                }
+
+                // Verificar o Content-Type da resposta
+                const contentType = response.headers.get('content-type');
+                let data;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.log('Update QR - JSON Response text:', text.substring(0, 200));
+                    
+                    // Verificar se a resposta não está vazia
+                    if (!text || text.trim() === '') {
+                        console.error('Resposta JSON vazia do servidor ao atualizar QR Code');
+                        return;
+                    }
+                    
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        console.error('Erro ao fazer parse JSON da resposta:', e);
+                        console.error('Texto da resposta JSON:', text);
+                        return;
+                    }
+                } else if (contentType && contentType.includes('image/')) {
+                    // Se a resposta é uma imagem, converter para base64
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const base64 = reader.result;
+                        displayQRCode({ qrcode: base64 });
+                    };
+                    reader.readAsDataURL(blob);
+                    return;
+                } else {
+                    // Tentar como texto primeiro
+                    const text = await response.text();
+                    console.log('Update QR - Resposta como texto:', text.substring(0, 200));
+                    
+                    // Verificar se a resposta não está vazia
+                    if (!text || text.trim() === '') {
+                        console.error('Resposta vazia do servidor ao atualizar QR Code');
+                        return;
+                    }
+                    
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        console.error('Erro ao fazer parse da resposta:', e);
+                        console.error('Texto da resposta:', text);
+                        return;
+                    }
+                }
                 
                 if (data.connected) {
                     clearInterval(qrTimer);
@@ -271,41 +411,124 @@
         // Carregar instâncias
         async function loadInstances() {
             try {
-                const response = await fetch('https://evolution.iaconversas.com/instance/fetchInstances', {
+                console.log('Carregando instâncias...');
+                console.log('Evolution URL:', config.evolution_url);
+                console.log('API Key:', config.evolution_api_key ? 'Configurada' : 'Não configurada');
+                
+                const response = await fetch(config.evolution_url + '/instance/fetchInstances', {
                     headers: {
-                        'apikey': '5863c643c8bf6d84e8da8bb564ea13fc',
+                        'apikey': config.evolution_api_key,
                         'Content-Type': 'application/json'
                     }
                 });
 
-                const instances = await response.json();
+                console.log('Load Instances - Response Status:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
+                }
+                
+                const text = await response.text();
+                console.log('Load Instances - Response text:', text.substring(0, 500));
+                
+                if (!text || text.trim() === '') {
+                    console.error('Resposta vazia ao carregar instâncias');
+                    displayInstancesList([]);
+                    return;
+                }
+                
+                let instances;
+                try {
+                    instances = JSON.parse(text);
+                    console.log('Instâncias carregadas:', instances);
+                } catch (e) {
+                    console.error('Erro ao fazer parse JSON das instâncias:', e);
+                    console.error('Texto da resposta:', text);
+                    displayInstancesList([]);
+                    return;
+                }
+                
                 displayInstancesList(instances);
             } catch (error) {
                 console.error('Erro ao carregar instâncias:', error);
+                displayInstancesList([]);
             }
         }
 
         function displayInstancesList(instances) {
+            console.log('Exibindo lista de instâncias:', instances);
             const container = document.getElementById('instancesList');
             const connectedOnly = document.getElementById('connectedOnly').checked;
             
+            if (!instances || !Array.isArray(instances)) {
+                console.error('Instâncias inválidas ou não é um array:', instances);
+                container.innerHTML = '<div class="p-4 text-center text-gray-500">Nenhuma instância encontrada</div>';
+                return;
+            }
+            
+            if (instances.length === 0) {
+                console.log('Array de instâncias está vazio');
+                container.innerHTML = '<div class="p-4 text-center text-gray-500">Nenhuma instância encontrada</div>';
+                return;
+            }
+            
+            console.log('Filtro "Apenas conectadas":', connectedOnly);
+            
             const filteredInstances = connectedOnly ? 
-                instances.filter(instance => instance.connectionStatus === 'open') : 
+                instances.filter(instance => {
+                    const isConnected = instance.connectionStatus === 'open';
+                    console.log(`Instância ${instance.instance?.instanceName || 'sem nome'}: ${instance.connectionStatus} (conectada: ${isConnected})`);
+                    return isConnected;
+                }) : 
                 instances;
+                
+            console.log('Instâncias filtradas:', filteredInstances);
+            
+            if (filteredInstances.length === 0) {
+                container.innerHTML = '<div class="p-4 text-center text-gray-500">Nenhuma instância ' + (connectedOnly ? 'conectada ' : '') + 'encontrada</div>';
+                return;
+            }
 
-            container.innerHTML = filteredInstances.map(instance => `
-                <div class="flex items-center space-x-3 p-3 border rounded-lg">
-                    <input type="checkbox" class="instance-checkbox" value="${instance.instance.instanceName}" />
-                    <div class="flex-1">
-                        <span class="font-medium">${instance.instance.instanceName}</span>
-                        <span class="ml-2 px-2 py-1 text-xs rounded-full ${
-                            instance.connectionStatus === 'open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }">
-                            ${instance.connectionStatus === 'open' ? 'Conectado' : 'Desconectado'}
-                        </span>
+            container.innerHTML = filteredInstances.map(instance => {
+                console.log('Estrutura completa da instância (webhook):', JSON.stringify(instance, null, 2));
+                
+                // Tentar diferentes caminhos para o nome da instância (igual à aba Gerenciar)
+                let instanceName = 'Nome não disponível';
+                
+                if (instance.instance?.instanceName) {
+                    instanceName = instance.instance.instanceName;
+                    console.log('Nome encontrado em instance.instance.instanceName (webhook):', instanceName);
+                } else if (instance.instanceName) {
+                    instanceName = instance.instanceName;
+                    console.log('Nome encontrado em instance.instanceName (webhook):', instanceName);
+                } else if (instance.name) {
+                    instanceName = instance.name;
+                    console.log('Nome encontrado em instance.name (webhook):', instanceName);
+                } else if (instance.id) {
+                    instanceName = instance.id;
+                    console.log('Nome encontrado em instance.id (webhook):', instanceName);
+                } else {
+                    console.log('Nenhum nome encontrado na aba webhook, usando fallback');
+                }
+                
+                const connectionStatus = instance.connectionStatus || instance.status || 'unknown';
+                
+                console.log(`Processando instância (webhook): ${instanceName}, status: ${connectionStatus}`);
+                
+                return `
+                    <div class="flex items-center space-x-3 p-3 border rounded-lg">
+                        <input type="checkbox" class="instance-checkbox" value="${instanceName}" />
+                        <div class="flex-1">
+                            <span class="font-medium">${instanceName}</span>
+                            <span class="ml-2 px-2 py-1 text-xs rounded-full ${
+                                connectionStatus === 'open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }">
+                                ${connectionStatus === 'open' ? 'Conectado' : 'Desconectado'}
+                            </span>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Atualizar webhooks
@@ -322,34 +545,115 @@
             const resultsContainer = document.getElementById('webhookResults');
             resultsContainer.innerHTML = '';
             resultsContainer.classList.remove('hidden');
+            console.log('Atualizando webhooks para instâncias selecionadas:', selectedInstances);
 
             for (const instanceName of selectedInstances) {
                 try {
-                    const response = await fetch('https://n8n.iaconversas.com/webhook/atualiza-webhook', {
+                    console.log(`Atualizando webhook para instância: ${instanceName}`);
+                    console.log('URL do webhook:', webhookUrl);
+                    console.log('Fazendo requisição direta para Evolution API');
+                    console.log('URL da Evolution API:', config.evolution_url);
+                    console.log('API Key:', config.evolution_api_key ? 'Configurada' : 'NÃO CONFIGURADA');
+                    
+                    // Codificar o nome da instância para lidar com espaços e caracteres especiais
+                    const encodedInstanceName = encodeURIComponent(instanceName);
+                    const requestUrl = config.evolution_url + `/webhook/set/${encodedInstanceName}`;
+                    // Remover espaços extras e caracteres de acento grave da URL do webhook
+                    let cleanWebhookUrl = webhookUrl.trim();
+                    // Remover caracteres de acento grave que podem estar presentes
+                    cleanWebhookUrl = cleanWebhookUrl.replace(/`/g, '');
+                    
+                    // Garantir que a URL não tenha aspas extras
+                    const finalWebhookUrl = cleanWebhookUrl.replace(/["']/g, '');
+                    
+                    // Estrutura correta conforme exigido pela API Evolution
+                    const requestBody = {
+                        webhook: {
+                            url: finalWebhookUrl,
+                            webhook_by_events: false,
+                            webhook_base64: false,
+                            enabled: true,
+                            events: [
+                                'APPLICATION_STARTUP',
+                                'QRCODE_UPDATED',
+                                'CONNECTION_UPDATE',
+                                'MESSAGES_UPSERT',
+                                'MESSAGES_UPDATE',
+                                'SEND_MESSAGE'
+                            ]
+                        }
+                    };
+                    
+                    console.log('URL da requisição:', requestUrl);
+                    console.log('Body da requisição (objeto):', requestBody);
+                    console.log('Body da requisição (JSON):', JSON.stringify(requestBody, null, 2));
+                    console.log('URL final do webhook:', finalWebhookUrl);
+                    
+                    // Verificar se a URL do webhook está formatada corretamente
+                    console.log('URL do webhook após limpeza:', cleanWebhookUrl);
+                    if (cleanWebhookUrl.includes('`')) {
+                        console.warn('A URL do webhook ainda contém caracteres de acento grave (`) que podem causar problemas');
+                    }
+                    if (cleanWebhookUrl.startsWith(' ') || cleanWebhookUrl.endsWith(' ')) {
+                        console.warn('A URL do webhook ainda contém espaços no início ou fim');
+                    }
+                    
+                    // Fazer requisição direta para a Evolution API
+                    const response = await fetch(requestUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'apikey': config.evolution_api_key
                         },
-                        body: JSON.stringify({ instanceName, webhookUrl })
+                        body: JSON.stringify(requestBody)
                     });
 
-                    const result = await response.json();
+                    console.log(`Response status para ${instanceName}:`, response.status, response.statusText);
+                    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                    
+                    if (!response.ok) {
+                        console.error(`Erro HTTP para ${instanceName}:`, response.status, response.statusText);
+                        
+                        // Tentar obter mais detalhes sobre o erro
+                        const errorText = await response.text();
+                        console.error(`Detalhes do erro para ${instanceName}:`, errorText);
+                        
+                        throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const text = await response.text();
+                    console.log(`Response text para ${instanceName}:`, text.substring(0, 500));
+                    
+                    let result = null;
+                    if (text && text.trim() !== '') {
+                        try {
+                            result = JSON.parse(text);
+                            console.log(`Resultado parseado para ${instanceName}:`, result);
+                        } catch (parseError) {
+                            console.error(`Erro ao fazer parse JSON para ${instanceName}:`, parseError);
+                            console.log('Texto que causou erro:', text);
+                            if (response.status === 400) {
+                                throw new Error(`Erro 400: ${text.substring(0, 100)}${text.length > 100 ? '...' : ''}`);
+                            } else {
+                                throw new Error('Resposta inválida do servidor');
+                            }
+                        }
+                    }
                     
                     resultsContainer.innerHTML += `
                         <div class="flex items-center justify-between p-3 border rounded-lg">
                             <span>${instanceName}</span>
-                            <span class="px-2 py-1 text-xs rounded-full ${
-                                response.ok ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }">
-                                ${response.ok ? 'Sucesso' : 'Erro'}
+                            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                Webhook atualizado com sucesso
                             </span>
                         </div>
                     `;
                 } catch (error) {
+                    console.error(`Erro ao atualizar webhook para ${instanceName}:`, error);
                     resultsContainer.innerHTML += `
                         <div class="flex items-center justify-between p-3 border rounded-lg">
                             <span>${instanceName}</span>
-                            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Erro</span>
+                            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Erro: ${error.message}</span>
                         </div>
                     `;
                 }
@@ -359,22 +663,72 @@
         // Gerenciar instâncias
         async function refreshInstances() {
             try {
-                const response = await fetch('https://evolution.iaconversas.com/instance/fetchInstances', {
+                console.log('Atualizando lista de instâncias...');
+                const response = await fetch(config.evolution_url + '/instance/fetchInstances', {
                     headers: {
-                        'apikey': '5863c643c8bf6d84e8da8bb564ea13fc',
+                        'apikey': config.evolution_api_key,
                         'Content-Type': 'application/json'
                     }
                 });
 
-                const instances = await response.json();
+                console.log('Refresh Instances - Response Status:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
+                }
+                
+                const text = await response.text();
+                console.log('Refresh Instances - Response text:', text.substring(0, 500));
+                
+                if (!text || text.trim() === '') {
+                    console.error('Resposta vazia ao atualizar instâncias');
+                    displayInstancesTable([]);
+                    return;
+                }
+                
+                let instances;
+                try {
+                    instances = JSON.parse(text);
+                    console.log('Instâncias atualizadas (refreshInstances):', instances);
+                    console.log('Tipo de dados (refreshInstances):', typeof instances);
+                    console.log('É array? (refreshInstances)', Array.isArray(instances));
+                    
+                    // Log detalhado de cada instância recebida na refreshInstances
+                    if (Array.isArray(instances)) {
+                        instances.forEach((instance, index) => {
+                            console.log(`RefreshInstances - Instância ${index}:`, JSON.stringify(instance, null, 2));
+                            console.log(`RefreshInstances - Chaves disponíveis na instância ${index}:`, Object.keys(instance));
+                        });
+                    }
+                } catch (e) {
+                    console.error('Erro ao fazer parse JSON das instâncias:', e);
+                    console.error('Texto da resposta:', text);
+                    displayInstancesTable([]);
+                    return;
+                }
+                
                 displayInstancesTable(instances);
             } catch (error) {
                 console.error('Erro ao carregar instâncias:', error);
+                displayInstancesTable([]);
             }
         }
 
         function displayInstancesTable(instances) {
+            console.log('Exibindo tabela de instâncias:', instances);
             const container = document.getElementById('instancesTable');
+            
+            if (!instances || !Array.isArray(instances)) {
+                console.error('Instâncias inválidas para tabela:', instances);
+                container.innerHTML = '<div class="p-4 text-center text-gray-500">Erro ao carregar instâncias</div>';
+                return;
+            }
+            
+            if (instances.length === 0) {
+                console.log('Nenhuma instância encontrada para tabela');
+                container.innerHTML = '<div class="p-4 text-center text-gray-500">Nenhuma instância encontrada</div>';
+                return;
+            }
             
             container.innerHTML = `
                 <div class="overflow-x-auto">
@@ -387,34 +741,61 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            ${instances.map(instance => `
-                                <tr>
-                                    <td class="px-4 py-4 whitespace-nowrap">
-                                        <div class="font-medium text-gray-900 dark:text-gray-100">
-                                            ${instance.instance.instanceName}
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 text-xs rounded-full ${
-                                            instance.connectionStatus === 'open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                        }">
-                                            ${instance.connectionStatus === 'open' ? 'Conectado' : 'Desconectado'}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-4 whitespace-nowrap space-x-2">
-                                        ${instance.connectionStatus === 'open' ? `
-                                            <button onclick="disconnectInstance('${instance.instance.instanceName}')" 
-                                                    class="text-yellow-600 hover:text-yellow-900 text-sm">
-                                                Desconectar
+                            ${instances.map(instance => {
+                                console.log('Estrutura completa da instância:', JSON.stringify(instance, null, 2));
+                                
+                                // Tentar diferentes caminhos para o nome da instância
+                                let instanceName = 'Nome não disponível';
+                                
+                                if (instance.instance?.instanceName) {
+                                    instanceName = instance.instance.instanceName;
+                                    console.log('Nome encontrado em instance.instance.instanceName:', instanceName);
+                                } else if (instance.instanceName) {
+                                    instanceName = instance.instanceName;
+                                    console.log('Nome encontrado em instance.instanceName:', instanceName);
+                                } else if (instance.name) {
+                                    instanceName = instance.name;
+                                    console.log('Nome encontrado em instance.name:', instanceName);
+                                } else if (instance.id) {
+                                    instanceName = instance.id;
+                                    console.log('Nome encontrado em instance.id:', instanceName);
+                                } else {
+                                    console.log('Nenhum nome encontrado, usando fallback');
+                                }
+                                
+                                const connectionStatus = instance.connectionStatus || instance.status || 'unknown';
+                                
+                                console.log(`Processando instância: ${instanceName}, status: ${connectionStatus}`);
+                                
+                                return `
+                                    <tr>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <div class="font-medium text-gray-900 dark:text-gray-100">
+                                                ${instanceName}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 text-xs rounded-full ${
+                                                connectionStatus === 'open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                            }">
+                                                ${connectionStatus === 'open' ? 'Conectado' : 'Desconectado'}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap space-x-2">
+                                            ${connectionStatus === 'open' ? `
+                                                <button onclick="disconnectInstance('${instanceName}')" 
+                                                        class="text-yellow-600 hover:text-yellow-900 text-sm">
+                                                    Desconectar
+                                                </button>
+                                            ` : ''}
+                                            <button onclick="deleteInstance('${instanceName}')" 
+                                                    class="text-red-600 hover:text-red-900 text-sm">
+                                                Excluir
                                             </button>
-                                        ` : ''}
-                                        <button onclick="deleteInstance('${instance.instance.instanceName}')" 
-                                                class="text-red-600 hover:text-red-900 text-sm">
-                                            Excluir
-                                        </button>
-                                    </td>
-                                </tr>
-                            `).join('')}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -437,10 +818,10 @@
 
         async function performDisconnect(instanceName) {
             try {
-                const response = await fetch(`https://evolution.iaconversas.com/instance/logout/${instanceName}`, {
+                const response = await fetch(`${config.evolution_url}/instance/logout/${instanceName}`, {
                     method: 'DELETE',
                     headers: {
-                        'apikey': '5863c643c8bf6d84e8da8bb564ea13fc',
+                        'apikey': config.evolution_api_key,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -458,10 +839,10 @@
 
         async function performDelete(instanceName) {
             try {
-                const response = await fetch(`https://evolution.iaconversas.com/instance/delete/${instanceName}`, {
+                const response = await fetch(`${config.evolution_url}/instance/delete/${instanceName}`, {
                     method: 'DELETE',
                     headers: {
-                        'apikey': '5863c643c8bf6d84e8da8bb564ea13fc',
+                        'apikey': config.evolution_api_key,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -491,10 +872,18 @@
 
         function showError(message) {
             hideLoading();
+            console.error('Evolution Manager Error:', message);
             document.getElementById('errorMessage').textContent = message;
             document.getElementById('errorState').classList.remove('hidden');
             document.getElementById('qrCodeContainer').classList.add('hidden');
             document.getElementById('successState').classList.add('hidden');
+        }
+
+        // Função para debug de respostas da API
+        function debugResponse(response, data) {
+            console.log('Response Status:', response.status);
+            console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
+            console.log('Response Data:', data);
         }
 
         function showSuccess(message = 'Operação realizada com sucesso!') {

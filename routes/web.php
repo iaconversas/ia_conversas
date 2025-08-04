@@ -34,6 +34,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/users', [AdminDashboardController::class, 'users'])->name('users');
     Route::get('/settings', [AdminDashboardController::class, 'settings'])->name('settings');
+    Route::get('/evolution-api', [AdminDashboardController::class, 'evolutionApi'])->name('evolution-api');
+    Route::put('/evolution-settings', [AdminDashboardController::class, 'updateEvolutionSettings'])->name('evolution-settings.update');
 });
 
 // Rotas do Cliente

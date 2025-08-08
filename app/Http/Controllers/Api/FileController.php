@@ -15,7 +15,7 @@ class FileController extends Controller
     
     public function __construct(SupabaseService $supabaseService)
     {
-        $this->middleware('auth:sanctum');
+        $this->middleware('auth:sanctum')->except(['serveFile']);
         $this->supabaseService = $supabaseService;
     }
 
@@ -407,6 +407,12 @@ class FileController extends Controller
 
     public function serveFile(Request $request, $path)
     {
+        \Log::info('ServeFile chamado', [
+            'path' => $path,
+            'query_params' => $request->query(),
+            'headers' => $request->headers->all()
+        ]);
+        
         try {
             // Tentar autenticação via token na query string primeiro
             $token = $request->query('token');
@@ -426,39 +432,50 @@ class FileController extends Controller
                 $userId = Auth::id();
             }
             
-            if (!$userId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Não autenticado'
-                ], 401);
-            }
-            
-            // Verificar se o arquivo pertence ao usuário
-            if (!str_starts_with($path, "user-media/{$userId}/")) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Acesso negado'
-                ], 403);
+            // Verificar se o usuário tem permissão para acessar este arquivo
+            if ($userId && !str_starts_with($path, "user-media/{$userId}/")) {
+                return response()->json(['error' => 'Acesso negado'], 403);
             }
 
             $forceDownload = $request->query('download') === '1';
             
             // Tentar servir do Supabase primeiro, se configurado
             if ($this->supabaseService->isConfigured()) {
-                $publicUrl = $this->supabaseService->getPublicUrl($path);
-                
                 if ($forceDownload) {
-                    // Para download forçado, fazer proxy do arquivo
-                    $fileResponse = \Illuminate\Support\Facades\Http::get($publicUrl);
-                    if ($fileResponse->successful()) {
+                    // Para download forçado, usar o método downloadFile para evitar corrupção
+                    $downloadResult = $this->supabaseService->downloadFile($path);
+                    if ($downloadResult['success']) {
                         $fileName = basename($path);
-                        return response($fileResponse->body())
-                            ->header('Content-Type', $fileResponse->header('Content-Type') ?? 'application/octet-stream')
+                        return response($downloadResult['content'])
+                            ->header('Content-Type', $downloadResult['content_type'] ?? 'application/octet-stream')
                             ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
                             ->header('Cache-Control', 'no-cache');
                     }
                 } else {
-                    return redirect($publicUrl);
+                    // Para visualização, usar o método serveFile que trata corrupção
+                    try {
+                         $serveResult = $this->supabaseService->serveFile($path);
+                         
+                         if ($serveResult['success']) {
+                            if ($serveResult['type'] === 'redirect') {
+                                // Redirecionar para URL pública (mais eficiente)
+                                return redirect($serveResult['url']);
+                            } else {
+                                // Servir conteúdo diretamente (fallback)
+                                $fileName = basename($path);
+                                return response($serveResult['content'])
+                                    ->header('Content-Type', $serveResult['content_type'] ?? 'application/octet-stream')
+                                    ->header('Content-Disposition', 'inline; filename="' . $fileName . '"')
+                                    ->header('Cache-Control', 'public, max-age=3600');
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Erro no serveFile do Supabase', [
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                        throw $e;
+                    }
                 }
             }
 

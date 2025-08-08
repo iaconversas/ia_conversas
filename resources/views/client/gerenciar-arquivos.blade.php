@@ -1,41 +1,55 @@
 <x-layouts.app>
     <flux:heading size="xl">Gerenciador de Arquivos</flux:heading>
-    <flux:subheading>Upload e Gerenciamento de Mídia</flux:subheading>
+    <flux:subheading class="pb-5">Upload e Gerenciamento de Mídia</flux:subheading>
 
     <div class="space-y-6">
         <!-- Estatísticas -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <flux:card class="border-l-4 border-l-blue-500">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-blue-600" id="totalFiles">0</div>
-                    <div class="text-sm text-blue-600">Total de Arquivos</div>
-                </div>
-            </flux:card>
+        <div class="flex gap-6">
+            <!-- Primeiros 3 cards ocupam 50% -->
+            <div class="w-1/2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <flux:card>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600" id="totalFiles">0</div>
+                        <div class="text-sm text-blue-600">Total de Arquivos</div>
+                    </div>
+                </flux:card>
+                
+                <flux:card>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600" id="totalImages">0</div>
+                        <div class="text-sm text-green-600">Imagens</div>
+                    </div>
+                </flux:card>
+                
+                <flux:card>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-purple-600" id="totalVideos">0</div>
+                        <div class="text-sm text-purple-600">Vídeos</div>
+                    </div>
+                </flux:card>
+            </div>
             
-            <flux:card class="border-l-4 border-l-green-500">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-green-600" id="totalImages">0</div>
-                    <div class="text-sm text-green-600">Imagens</div>
-                </div>
-            </flux:card>
-            
-            <flux:card class="border-l-4 border-l-purple-500">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-purple-600" id="totalVideos">0</div>
-                    <div class="text-sm text-purple-600">Vídeos</div>
-                </div>
-            </flux:card>
-            
-            <flux:card class="border-l-4 border-l-orange-500">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-orange-600" id="totalSize">0 MB</div>
-                    <div class="text-sm text-orange-600">Espaço Usado</div>
-                </div>
-            </flux:card>
+            <!-- Últimos 2 cards ocupam os outros 50% -->
+            <div class="w-1/2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <flux:card>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-orange-600" id="totalSize">0 MB</div>
+                        <div class="text-sm text-orange-600">Espaço Usado</div>
+                    </div>
+                </flux:card>
+                
+                <!-- Card adicional para completar o layout -->
+                <flux:card>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-red-600" id="totalDocuments">0</div>
+                        <div class="text-sm text-red-600">Documentos</div>
+                    </div>
+                </flux:card>
+            </div>
         </div>
 
         <!-- Upload de Arquivos -->
-        <flux:card class="border-l-4 border-l-indigo-500">
+        <flux:card>
             <flux:card.header>
                 <flux:heading size="lg">Upload de Arquivos</flux:heading>
                 <flux:subheading>Arraste e solte ou clique para selecionar arquivos</flux:subheading>
@@ -61,7 +75,7 @@
                             <p class="text-lg font-medium text-indigo-600 dark:text-indigo-400">
                                 Arraste arquivos aqui ou clique para selecionar
                             </p>
-                            <p class="text-sm text-gray-500 mt-2">
+                            <p class="text-sm text-gray-500">
                                 Suporte: Imagens, Vídeos, Áudios (máx. 100MB por arquivo)
                             </p>
                         </div>
@@ -130,7 +144,7 @@
         </flux:card>
 
         <!-- Lista de Arquivos -->
-        <flux:card class="border-l-4 border-l-gray-500">
+        <flux:card>
             <flux:card.header>
                 <flux:heading size="lg">Meus Arquivos</flux:heading>
                 <flux:subheading id="filesSubheading">Carregando arquivos...</flux:subheading>
@@ -223,7 +237,7 @@
 
     <!-- Toast de Notificação -->
     <div id="toast" class="hidden fixed top-4 right-4 z-50">
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 max-w-sm">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 max-w-sm">
             <div class="flex items-center">
                 <div id="toastIcon" class="flex-shrink-0 mr-3">
                     <!-- Ícone será inserido aqui -->
@@ -450,7 +464,7 @@
             container.classList.remove('hidden');
             
             container.innerHTML = filteredFiles.map(file => `
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-200">
+                <div class="bg-white dark:bg-gray-800 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200">
                     <!-- Preview -->
                     <div class="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer overflow-hidden" onclick="previewFile('${escapeHtml(file.path)}', '${file.category}', '${escapeHtml(file.original_name)}')">
                         ${getFilePreview(file)}
@@ -461,15 +475,15 @@
                         <div class="font-medium text-sm truncate" title="${escapeHtml(file.original_name)}">
                             ${escapeHtml(file.original_name)}
                         </div>
-                        <div class="text-xs text-gray-500 mt-1">
+                        <div class="text-xs text-gray-500">
                             ${file.size_formatted} • ${file.modified_at_formatted}
                         </div>
-                        <div class="flex items-center justify-between mt-3">
+                        <div class="flex items-center justify-between">
                             <span class="px-2 py-1 text-xs rounded-full ${getCategoryBadgeClass(file.category)}">
                                 ${getCategoryLabel(file.category)}
                             </span>
                             <div class="flex space-x-1">
-                                <button onclick="copyFileUrl('${escapeHtml(file.url)}')" class="p-1 text-gray-400 hover:text-blue-600 transition-colors" title="Copiar Link">
+                                <button onclick="copyFileUrl('${escapeHtml(file.direct_url || file.url)}')" class="p-1 text-gray-400 hover:text-blue-600 transition-colors" title="Copiar Link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                     </svg>
@@ -525,8 +539,8 @@
                         
                         <!-- Image Overlay -->
                         <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
-                            <div class="text-white">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="text-white m-0">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                 </svg>
@@ -568,7 +582,7 @@
                     <div class="relative w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-800 dark:to-orange-900 flex items-center justify-center group">
                         <!-- Audio Waveform Background -->
                         <div class="absolute inset-0 opacity-10">
-                            <svg class="w-full h-full" viewBox="0 0 200 100" fill="currentColor">
+                            <svg class="w-full h-16" viewBox="0 0 200 100" fill="currentColor">
                                 <rect x="10" y="30" width="4" height="40" class="text-orange-600"/>
                                 <rect x="20" y="20" width="4" height="60" class="text-orange-600"/>
                                 <rect x="30" y="35" width="4" height="30" class="text-orange-600"/>

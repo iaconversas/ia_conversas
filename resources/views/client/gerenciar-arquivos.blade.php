@@ -236,12 +236,90 @@
         </div>
     </div>
 
+    <style>
+        /* Animações customizadas para os previews */
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .pulse-slow {
+            animation: pulse-slow 2s infinite;
+        }
+        
+        /* Efeito de hover melhorado para cards */
+        .file-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .file-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Melhorias para o modal */
+        .modal-backdrop {
+            backdrop-filter: blur(8px);
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+        
+        /* Animação de entrada para imagens */
+        .image-fade-in {
+            animation: fadeInScale 0.5s ease-out;
+        }
+        
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        /* Efeito shimmer para loading */
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        /* Melhorias para vídeo thumbnails */
+        .video-thumbnail {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .video-thumbnail::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        
+        .video-thumbnail:hover::after {
+            transform: translateX(100%);
+        }
+    </style>
+
     <script>
         let currentFiles = [];
         let filteredFiles = [];
         let activeCategory = 'all';
-        let fileToDelete = null;
         let apiToken = null;
+        let fileToDelete = null;
         
         // Gerar token de API na inicialização
         async function generateApiToken() {
@@ -264,8 +342,9 @@
         }
 
         // Carregar arquivos ao inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            setupStorage();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await generateApiToken();
+            await setupStorage();
             loadFiles();
         });
 
@@ -318,6 +397,14 @@
                     headers: headers
                 });
 
+                // Verificar se a resposta é JSON válido
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Resposta não é JSON:', text.substring(0, 200));
+                    throw new Error(`Servidor retornou ${response.status}: ${response.statusText}. Resposta não é JSON válido.`);
+                }
+
                 const data = await response.json();
                 
                 if (data.success) {
@@ -363,9 +450,9 @@
             container.classList.remove('hidden');
             
             container.innerHTML = filteredFiles.map(file => `
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-200">
                     <!-- Preview -->
-                    <div class="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer" onclick="previewFile('${escapeHtml(file.path)}', '${file.category}', '${escapeHtml(file.original_name)}')">
+                    <div class="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer overflow-hidden" onclick="previewFile('${escapeHtml(file.path)}', '${file.category}', '${escapeHtml(file.original_name)}')">
                         ${getFilePreview(file)}
                     </div>
                     
@@ -402,6 +489,11 @@
                     </div>
                 </div>
             `).join('');
+            
+            // Inicializar lazy loading após renderizar
+            setTimeout(() => {
+                initLazyLoading();
+            }, 100);
         }
 
         function getFilePreview(file) {
@@ -412,29 +504,119 @@
                     const token = apiToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     url += `?token=${encodeURIComponent(token)}`;
                 }
-                return `<img src="${url}" alt="${escapeHtml(file.original_name)}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=&quot;w-full h-full flex items-center justify-center bg-gray-100 text-gray-500&quot;>❌ Erro ao carregar</div>'">`;
-            } else if (file.category === 'video') {
+                
+                const imageId = `img-${Math.random().toString(36).substr(2, 9)}`;
                 return `
-                    <div class="text-purple-500">
-                        <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path>
-                        </svg>
+                    <div class="relative w-full h-full bg-gray-100 dark:bg-gray-700">
+                        <!-- Loading Spinner -->
+                        <div id="loading-${imageId}" class="absolute inset-0 flex items-center justify-center">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        </div>
+                        
+                        <!-- Image -->
+                        <img 
+                            id="${imageId}"
+                            data-src="${url}" 
+                            alt="${escapeHtml(file.original_name)}" 
+                            class="w-full h-full object-cover opacity-0 transition-opacity duration-300 lazy-image"
+                            onload="handleImageLoad('${imageId}')"
+                            onerror="handleImageError('${imageId}', '${escapeHtml(file.original_name)}')"
+                        >
+                        
+                        <!-- Image Overlay -->
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
+                            <div class="text-white">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (file.category === 'video') {
+                let url = file.url;
+                if (url.startsWith('/api/files/serve/')) {
+                    const token = apiToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    url += `?token=${encodeURIComponent(token)}`;
+                }
+                
+                return `
+                    <div class="relative w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-800 dark:to-purple-900 flex items-center justify-center group">
+                        <!-- Video Thumbnail (if possible) -->
+                        <video class="w-full h-full object-cover opacity-20" muted preload="metadata">
+                            <source src="${url}#t=1" type="video/mp4">
+                        </video>
+                        
+                        <!-- Play Icon Overlay -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="bg-purple-600 bg-opacity-90 rounded-full p-4 group-hover:bg-opacity-100 transition-all duration-200 group-hover:scale-110">
+                                <svg class="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <!-- Video Label -->
+                        <div class="absolute bottom-2 left-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                            VÍDEO
+                        </div>
                     </div>
                 `;
             } else if (file.category === 'audio') {
                 return `
-                    <div class="text-orange-500">
-                        <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 11-1.414-1.414A7.971 7.971 0 0017 12c0-2.21-.895-4.21-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 12a5.983 5.983 0 01-.757 2.829 1 1 0 11-1.415-1.414A3.987 3.987 0 0013 12a3.987 3.987 0 00-.172-1.415 1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                        </svg>
+                    <div class="relative w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-800 dark:to-orange-900 flex items-center justify-center group">
+                        <!-- Audio Waveform Background -->
+                        <div class="absolute inset-0 opacity-10">
+                            <svg class="w-full h-full" viewBox="0 0 200 100" fill="currentColor">
+                                <rect x="10" y="30" width="4" height="40" class="text-orange-600"/>
+                                <rect x="20" y="20" width="4" height="60" class="text-orange-600"/>
+                                <rect x="30" y="35" width="4" height="30" class="text-orange-600"/>
+                                <rect x="40" y="15" width="4" height="70" class="text-orange-600"/>
+                                <rect x="50" y="25" width="4" height="50" class="text-orange-600"/>
+                                <rect x="60" y="40" width="4" height="20" class="text-orange-600"/>
+                                <rect x="70" y="10" width="4" height="80" class="text-orange-600"/>
+                                <rect x="80" y="30" width="4" height="40" class="text-orange-600"/>
+                                <rect x="90" y="20" width="4" height="60" class="text-orange-600"/>
+                                <rect x="100" y="35" width="4" height="30" class="text-orange-600"/>
+                                <rect x="110" y="25" width="4" height="50" class="text-orange-600"/>
+                                <rect x="120" y="15" width="4" height="70" class="text-orange-600"/>
+                                <rect x="130" y="40" width="4" height="20" class="text-orange-600"/>
+                                <rect x="140" y="30" width="4" height="40" class="text-orange-600"/>
+                                <rect x="150" y="20" width="4" height="60" class="text-orange-600"/>
+                                <rect x="160" y="35" width="4" height="30" class="text-orange-600"/>
+                                <rect x="170" y="25" width="4" height="50" class="text-orange-600"/>
+                                <rect x="180" y="15" width="4" height="70" class="text-orange-600"/>
+                            </svg>
+                        </div>
+                        
+                        <!-- Audio Icon -->
+                        <div class="relative z-10 bg-orange-600 bg-opacity-90 rounded-full p-4 group-hover:bg-opacity-100 transition-all duration-200 group-hover:scale-110">
+                            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 11-1.414-1.414A7.971 7.971 0 0017 12c0-2.21-.895-4.21-2.343-5.657a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        
+                        <!-- Audio Label -->
+                        <div class="absolute bottom-2 left-2 bg-orange-600 text-white text-xs px-2 py-1 rounded">
+                            ÁUDIO
+                        </div>
                     </div>
                 `;
             } else {
                 return `
-                    <div class="text-gray-500">
-                        <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
-                        </svg>
+                    <div class="relative w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center group">
+                        <!-- Document Icon -->
+                        <div class="bg-gray-600 bg-opacity-90 rounded-full p-4 group-hover:bg-opacity-100 transition-all duration-200 group-hover:scale-110">
+                            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        
+                        <!-- File Label -->
+                        <div class="absolute bottom-2 left-2 bg-gray-600 text-white text-xs px-2 py-1 rounded">
+                            ARQUIVO
+                        </div>
                     </div>
                 `;
             }
@@ -570,6 +752,21 @@
             const formData = new FormData();
             formData.append('file', file);
             
+            // Determinar categoria baseada no tipo MIME
+            let category = null;
+            if (file.type.startsWith('image/')) {
+                category = 'image';
+            } else if (file.type.startsWith('video/')) {
+                category = 'video';
+            } else if (file.type.startsWith('audio/')) {
+                category = 'audio';
+            }
+            
+            // Enviar categoria apenas se for uma das válidas
+            if (category) {
+                formData.append('category', category);
+            }
+            
             const headers = {};
             
             if (apiToken) {
@@ -583,6 +780,14 @@
                 headers: headers,
                 body: formData
             });
+
+            // Verificar se a resposta é JSON válido
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Resposta não é JSON:', text.substring(0, 200));
+                throw new Error(`Servidor retornou ${response.status}: ${response.statusText}. Resposta não é JSON válido.`);
+            }
 
             const data = await response.json();
             
@@ -615,9 +820,8 @@
             const content = document.getElementById('previewContent');
             
             title.textContent = name;
-            info.textContent = `Categoria: ${getCategoryLabel(category)}`;
             
-            // Encontrar o arquivo na lista atual para obter a URL correta
+            // Encontrar o arquivo na lista atual para obter informações completas
             const file = currentFiles.find(f => f.path === path);
             let url = file ? file.url : `/storage/${path}`;
             
@@ -627,15 +831,133 @@
                 url += `?token=${encodeURIComponent(token)}`;
             }
             
-            if (category === 'image') {
-                content.innerHTML = `<img src="${url}" alt="${escapeHtml(name)}" class="max-w-full max-h-full object-contain" onerror="this.parentElement.innerHTML='<div class=&quot;text-center p-4 text-gray-500&quot;>❌ Erro ao carregar imagem</div>'">`;
-            } else if (category === 'video') {
-                content.innerHTML = `<video controls class="max-w-full max-h-full"><source src="${url}" type="video/mp4">Seu navegador não suporta vídeo.</video>`;
-            } else if (category === 'audio') {
-                content.innerHTML = `<audio controls class="w-full"><source src="${url}" type="audio/mpeg">Seu navegador não suporta áudio.</audio>`;
+            // Atualizar informações do arquivo
+            if (file) {
+                info.innerHTML = `
+                    <div class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a.997.997 0 01-1.414 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                            </svg>
+                            ${getCategoryLabel(category)}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+                            </svg>
+                            ${file.size_formatted}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            ${file.modified_at_formatted}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path>
+                            </svg>
+                            ${file.storage === 'supabase' ? 'Supabase' : 'Local'}
+                        </span>
+                    </div>
+                `;
             } else {
-                content.innerHTML = `<p class="text-gray-500">Preview não disponível para este tipo de arquivo.</p>`;
+                info.textContent = `Categoria: ${getCategoryLabel(category)}`;
             }
+            
+            // Loading state
+            content.innerHTML = `
+                <div class="flex items-center justify-center h-64">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+            `;
+            
+            // Renderizar preview baseado na categoria
+            setTimeout(() => {
+                if (category === 'image') {
+                    content.innerHTML = `
+                        <div class="relative">
+                            <img 
+                                src="${url}" 
+                                alt="${escapeHtml(name)}" 
+                                class="max-w-full max-h-[70vh] object-contain mx-auto rounded-lg shadow-lg"
+                                onload="this.parentElement.querySelector('.image-loading')?.remove()"
+                                onerror="this.parentElement.innerHTML='<div class=&quot;text-center p-8 text-gray-500&quot;><svg class=&quot;w-16 h-16 mx-auto mb-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z&quot;></path></svg><p>Erro ao carregar imagem</p></div>'"
+                            >
+                            <div class="image-loading absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (category === 'video') {
+                    content.innerHTML = `
+                        <div class="relative">
+                            <video 
+                                controls 
+                                class="max-w-full max-h-[70vh] mx-auto rounded-lg shadow-lg"
+                                preload="metadata"
+                                onloadstart="this.parentElement.querySelector('.video-loading')?.remove()"
+                            >
+                                <source src="${url}" type="video/mp4">
+                                <source src="${url}" type="video/webm">
+                                <source src="${url}" type="video/ogg">
+                                Seu navegador não suporta reprodução de vídeo.
+                            </video>
+                            <div class="video-loading absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                <div class="text-center">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                                    <p class="text-sm text-gray-600">Carregando vídeo...</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (category === 'audio') {
+                    content.innerHTML = `
+                        <div class="text-center p-8">
+                            <!-- Audio Visualizer -->
+                            <div class="mb-6">
+                                <div class="w-32 h-32 mx-auto bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
+                                    <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 11-1.414-1.414A7.971 7.971 0 0017 12c0-2.21-.895-4.21-2.343-5.657a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <!-- Audio Player -->
+                            <audio 
+                                controls 
+                                class="w-full max-w-md mx-auto"
+                                preload="metadata"
+                            >
+                                <source src="${url}" type="audio/mpeg">
+                                <source src="${url}" type="audio/wav">
+                                <source src="${url}" type="audio/ogg">
+                                Seu navegador não suporta reprodução de áudio.
+                            </audio>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="text-center p-8">
+                            <div class="w-24 h-24 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-500 mb-4">Preview não disponível para este tipo de arquivo</p>
+                            <button 
+                                onclick="downloadFile('${escapeHtml(path)}', '${escapeHtml(name)}')" 
+                                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                            >
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m-4-4V3"></path>
+                                </svg>
+                                Baixar Arquivo
+                            </button>
+                        </div>
+                    `;
+                }
+            }, 100);
             
             modal.classList.remove('hidden');
         }
@@ -722,6 +1044,14 @@
                     body: JSON.stringify({ path: fileToDelete.path })
                 });
 
+                // Verificar se a resposta é JSON válido
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Resposta não é JSON:', text.substring(0, 200));
+                    throw new Error(`Servidor retornou ${response.status}: ${response.statusText}. Resposta não é JSON válido.`);
+                }
+
                 const data = await response.json();
                 
                 if (data.success) {
@@ -786,6 +1116,56 @@
             const sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Funções para lazy loading de imagens
+        function handleImageLoad(imageId) {
+            const img = document.getElementById(imageId);
+            const loading = document.getElementById(`loading-${imageId}`);
+            
+            if (img && loading) {
+                img.classList.remove('opacity-0');
+                img.classList.add('opacity-100');
+                loading.style.display = 'none';
+            }
+        }
+
+        function handleImageError(imageId, fileName) {
+            const img = document.getElementById(imageId);
+            const loading = document.getElementById(`loading-${imageId}`);
+            
+            if (img && loading) {
+                loading.innerHTML = `
+                    <div class="text-center text-gray-500">
+                        <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <div class="text-xs">Erro ao carregar</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Implementar lazy loading quando as imagens entram na viewport
+        function initLazyLoading() {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        const src = img.getAttribute('data-src');
+                        if (src) {
+                            img.src = src;
+                            img.removeAttribute('data-src');
+                            observer.unobserve(img);
+                        }
+                    }
+                });
+            });
+
+            // Observar todas as imagens lazy
+            document.querySelectorAll('.lazy-image').forEach(img => {
+                imageObserver.observe(img);
+            });
         }
 
         // Inicializar aba ativa

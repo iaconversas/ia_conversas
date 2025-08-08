@@ -57,7 +57,14 @@ class FileController extends Controller
             if ($this->supabaseService->isConfigured()) {
                 // Upload para Supabase
                 $supabasePath = "user-media/{$userId}/{$category}/{$fileName}";
+                
+                // Ler o arquivo como binário para evitar problemas de encoding
                 $fileContent = file_get_contents($file->getPathname());
+                
+                // Verificar se o conteúdo foi lido corretamente
+                if ($fileContent === false) {
+                    throw new \Exception('Não foi possível ler o conteúdo do arquivo');
+                }
                 
                 $result = $this->supabaseService->uploadFile($supabasePath, $fileName, $fileContent);
                 
@@ -130,48 +137,67 @@ class FileController extends Controller
                 'total_size' => 0
             ];
             
-            // Verificar se Supabase está configurado
+            $useLocalStorage = true;
+            
+            // Verificar se Supabase está configurado e tentar listar arquivos
             if ($this->supabaseService->isConfigured()) {
-                // Listar arquivos do Supabase
-                $prefix = "user-media/{$userId}/";
-                $supabaseFiles = $this->supabaseService->listFiles($prefix);
-                
-                foreach ($supabaseFiles as $file) {
-                    if (!isset($file['name']) || empty($file['name'])) continue;
+                try {
+                    // Buscar arquivos em todas as categorias ou categoria específica
+                    $categories = $category ? [$category] : ['image', 'video', 'audio', 'other'];
                     
-                    $filePath = $file['name'];
-                    $pathParts = explode('/', $filePath);
-                    $fileName = end($pathParts);
-                    $cat = count($pathParts) >= 4 ? $pathParts[3] : 'other';
-                    
-                    // Filtrar por categoria se especificada
-                    if ($category && $cat !== $category) continue;
-                    
-                    $fileInfo = [
-                        'id' => $fileName,
-                        'name' => $fileName,
-                        'original_name' => $fileName,
-                        'path' => $filePath,
-                        'url' => '/api/files/serve/' . $filePath,
-                        'direct_url' => $this->supabaseService->getPublicUrl($filePath),
-                        'size' => $file['metadata']['size'] ?? 0,
-                        'type' => $file['metadata']['mimetype'] ?? 'application/octet-stream',
-                        'category' => $cat,
-                        'modified_at' => $file['updated_at'] ?? $file['created_at'] ?? now()->toISOString(),
-                        'storage' => 'supabase'
-                    ];
-                    
-                    // Filtrar por busca se fornecida
-                    if ($search && !str_contains(strtolower($fileInfo['original_name']), strtolower($search))) {
-                        continue;
+                    foreach ($categories as $cat) {
+                        // Listar arquivos do Supabase por categoria
+                        $prefix = "user-media/{$userId}/{$cat}/";
+                        $supabaseFiles = $this->supabaseService->listFiles($prefix);
+                        
+                        // Se conseguiu listar (mesmo que vazio), processar arquivos
+                        if ($supabaseFiles !== null) {
+                            $useLocalStorage = false;
+                            
+                            foreach ($supabaseFiles as $file) {
+                                if (!isset($file['name']) || empty($file['name'])) continue;
+                                
+                                $filePath = $prefix . $file['name'];
+                                $fileName = $file['name'];
+                                
+                                // Filtrar por categoria se especificada
+                                if ($category && $cat !== $category) continue;
+                            
+                            $fileInfo = [
+                                'id' => $fileName,
+                                'name' => $fileName,
+                                'original_name' => $fileName,
+                                'path' => $filePath,
+                                'url' => '/api/files/serve/' . $filePath,
+                                'direct_url' => $this->supabaseService->getPublicUrl($filePath),
+                                'size' => $file['metadata']['size'] ?? 0,
+                                'type' => $file['metadata']['mimetype'] ?? 'application/octet-stream',
+                                'category' => $cat,
+                                'modified_at' => $file['updated_at'] ?? $file['created_at'] ?? now()->toISOString(),
+                                'storage' => 'supabase'
+                            ];
+                            
+                            // Filtrar por busca se fornecida
+                            if ($search && !str_contains(strtolower($fileInfo['original_name']), strtolower($search))) {
+                                continue;
+                            }
+                            
+                                $files[] = $fileInfo;
+                                $stats['total']++;
+                                $stats[$cat === 'image' ? 'images' : ($cat === 'video' ? 'videos' : ($cat === 'audio' ? 'audios' : 'others'))]++;
+                                $stats['total_size'] += $fileInfo['size'];
+                            }
+                        }
                     }
-                    
-                    $files[] = $fileInfo;
-                    $stats['total']++;
-                    $stats[$cat === 'image' ? 'images' : ($cat === 'video' ? 'videos' : ($cat === 'audio' ? 'audios' : 'others'))]++;
-                    $stats['total_size'] += $fileInfo['size'];
+                } catch (\Exception $e) {
+                    // Log do erro e usar armazenamento local como fallback
+                    \Log::warning('Falha ao listar arquivos do Supabase, usando armazenamento local: ' . $e->getMessage());
+                    $useLocalStorage = true;
                 }
-            } else {
+            }
+            
+            // Usar armazenamento local se Supabase não estiver configurado ou falhar
+            if ($useLocalStorage) {
                 // Listar arquivos do storage local
                 $basePath = "user-media/{$userId}";
                 

@@ -24,15 +24,23 @@ class SupabaseService
     public function uploadFile($filePath, $fileName, $fileContent)
     {
         try {
+            // Verificar se o conteúdo do arquivo é válido
+            if (empty($fileContent)) {
+                throw new \Exception('Conteúdo do arquivo está vazio');
+            }
+
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->key,
                 'Content-Type' => 'application/octet-stream',
-            ])->put(
-                $this->url . '/storage/v1/object/' . $this->bucket . '/' . $filePath,
-                $fileContent
-            );
+            ])->withBody($fileContent, 'application/octet-stream')
+            ->put($this->url . '/storage/v1/object/' . $this->bucket . '/' . $filePath);
 
             if ($response->successful()) {
+                Log::info('Arquivo enviado com sucesso para Supabase', [
+                    'path' => $filePath,
+                    'size' => strlen($fileContent)
+                ]);
+                
                 return [
                     'success' => true,
                     'path' => $filePath,
@@ -40,11 +48,21 @@ class SupabaseService
                 ];
             }
 
-            Log::error('Supabase upload error', ['response' => $response->body()]);
-            return ['success' => false, 'error' => $response->body()];
+            $errorMessage = $response->body();
+            Log::error('Supabase upload error', [
+                'status' => $response->status(),
+                'response' => $errorMessage,
+                'path' => $filePath
+            ]);
+            
+            return ['success' => false, 'error' => $errorMessage];
 
         } catch (\Exception $e) {
-            Log::error('Supabase upload exception', ['error' => $e->getMessage()]);
+            Log::error('Supabase upload exception', [
+                'error' => $e->getMessage(),
+                'path' => $filePath,
+                'file' => $fileName
+            ]);
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -75,22 +93,56 @@ class SupabaseService
     public function listFiles($prefix = '')
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->key,
-            ])->get(
-                $this->url . '/storage/v1/object/list/' . $this->bucket,
-                ['prefix' => $prefix]
-            );
-
-            if ($response->successful()) {
-                return $response->json();
+            $url = $this->url . '/storage/v1/object/list/' . $this->bucket;
+            
+            // Se há um prefixo, usar POST com o prefixo no body
+            // Se não há prefixo, usar GET (mas isso pode falhar para alguns buckets)
+            if (!empty($prefix)) {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $this->key,
+                    'Content-Type' => 'application/json',
+                ])->post($url, [
+                    'prefix' => $prefix
+                ]);
+            } else {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $this->key,
+                ])->get($url);
             }
 
-            return [];
+            Log::info('Supabase list files request', [
+                'prefix' => $prefix,
+                'method' => !empty($prefix) ? 'POST' : 'GET',
+                'status' => $response->status(),
+                'url' => $url
+            ]);
+
+            if ($response->successful()) {
+                $files = $response->json();
+                Log::info('Supabase list files success', [
+                    'prefix' => $prefix,
+                    'count' => is_array($files) ? count($files) : 'not-array',
+                    'files' => is_array($files) ? array_slice($files, 0, 3) : $files
+                ]);
+                return $files;
+            }
+
+            Log::warning('Supabase list files failed', [
+                'prefix' => $prefix,
+                'method' => !empty($prefix) ? 'POST' : 'GET',
+                'status' => $response->status(),
+                'error' => $response->body()
+            ]);
+
+            // Retornar null para indicar falha (diferente de array vazio)
+            return null;
 
         } catch (\Exception $e) {
-            Log::error('Supabase list exception', ['error' => $e->getMessage()]);
-            return [];
+            Log::error('Supabase list exception', [
+                'prefix' => $prefix,
+                'error' => $e->getMessage()
+            ]);
+            return null;
         }
     }
 
@@ -130,10 +182,72 @@ class SupabaseService
     }
 
     /**
-     * Check if Supabase is configured
+     * Check if Supabase is configured and bucket is accessible
      */
     public function isConfigured()
     {
-        return !empty($this->url) && !empty($this->key);
+        if (empty($this->url) || empty($this->key)) {
+            return false;
+        }
+
+        // Cache da verificação do bucket por 5 minutos
+        $cacheKey = 'supabase_bucket_check_' . $this->bucket;
+        $cached = cache($cacheKey);
+        
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        // Testar se o bucket está acessível fazendo um upload de teste
+        try {
+            $testContent = 'test-' . time();
+            $testPath = 'test-connectivity/' . time() . '.txt';
+            
+            $response = Http::timeout(5)->withHeaders([
+                'Authorization' => 'Bearer ' . $this->key,
+                'Content-Type' => 'text/plain',
+            ])->withBody($testContent, 'text/plain')
+            ->put($this->url . '/storage/v1/object/' . $this->bucket . '/' . $testPath);
+
+            $isAccessible = $response->successful();
+            
+            // Se o upload funcionou, tentar deletar o arquivo de teste
+            if ($isAccessible) {
+                try {
+                    Http::timeout(3)->withHeaders([
+                        'Authorization' => 'Bearer ' . $this->key,
+                    ])->delete($this->url . '/storage/v1/object/' . $this->bucket . '/' . $testPath);
+                } catch (\Exception $e) {
+                    // Ignorar erro de deleção, o importante é que o upload funcionou
+                }
+            }
+            
+            // Cache o resultado por 5 minutos
+            cache([$cacheKey => $isAccessible], now()->addMinutes(5));
+            
+            if (!$isAccessible) {
+                Log::warning('Supabase bucket not accessible via upload test, using local storage', [
+                    'bucket' => $this->bucket,
+                    'status' => $response->status(),
+                    'error' => $response->body()
+                ]);
+            } else {
+                Log::info('Supabase bucket is accessible and ready for uploads', [
+                    'bucket' => $this->bucket
+                ]);
+            }
+            
+            return $isAccessible;
+            
+        } catch (\Exception $e) {
+            Log::warning('Supabase bucket connectivity test failed, using local storage', [
+                'bucket' => $this->bucket,
+                'error' => $e->getMessage()
+            ]);
+            
+            // Cache resultado negativo por 1 minuto apenas
+            cache([$cacheKey => false], now()->addMinute());
+            return false;
+        }
     }
 }

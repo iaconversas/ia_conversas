@@ -7,12 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Services\SupabaseService;
 
 class FileController extends Controller
 {
-    public function __construct()
+    private $supabaseService;
+    
+    public function __construct(SupabaseService $supabaseService)
     {
-        $this->middleware('auth');
+        $this->middleware('auth:sanctum');
+        $this->supabaseService = $supabaseService;
     }
 
     public function upload(Request $request)
@@ -49,7 +53,36 @@ class FileController extends Controller
             // Caminho do arquivo no storage
             $path = "user-media/{$userId}/{$category}/{$fileName}";
             
-            // Fazer upload para o storage
+            // Verificar se Supabase está configurado
+            if ($this->supabaseService->isConfigured()) {
+                // Upload para Supabase
+                $supabasePath = "user-media/{$userId}/{$category}/{$fileName}";
+                $fileContent = file_get_contents($file->getPathname());
+                
+                $result = $this->supabaseService->uploadFile($supabasePath, $fileName, $fileContent);
+                
+                if ($result['success']) {
+                    return response()->json([
+                        'success' => true,
+                        'file' => [
+                            'id' => $fileName,
+                            'name' => $originalName,
+                            'path' => $result['path'],
+                            'url' => $result['url'],
+                            'size' => $file->getSize(),
+                            'type' => $file->getMimeType(),
+                            'category' => $category,
+                            'uploaded_at' => now()->toISOString(),
+                            'storage' => 'supabase'
+                        ]
+                    ]);
+                } else {
+                    // Fallback para storage local se Supabase falhar
+                    \Log::warning('Supabase upload failed, using local storage', ['error' => $result['error']]);
+                }
+            }
+            
+            // Fazer upload para o storage local (padrão ou fallback)
             $uploaded = Storage::disk('public')->put($path, file_get_contents($file));
             
             if (!$uploaded) {
@@ -67,7 +100,8 @@ class FileController extends Controller
                     'size' => $file->getSize(),
                     'type' => $file->getMimeType(),
                     'category' => $category,
-                    'uploaded_at' => now()->toISOString()
+                    'uploaded_at' => now()->toISOString(),
+                    'storage' => 'local'
                 ]
             ]);
 
@@ -86,24 +120,6 @@ class FileController extends Controller
             $category = $request->get('category');
             $search = $request->get('search');
             
-            $basePath = "user-media/{$userId}";
-            
-            // Verificar se o diretório existe
-            if (!Storage::disk('public')->exists($basePath)) {
-                return response()->json([
-                    'success' => true,
-                    'files' => [],
-                    'stats' => [
-                        'total' => 0,
-                        'images' => 0,
-                        'videos' => 0,
-                        'audios' => 0,
-                        'others' => 0,
-                        'total_size' => 0
-                    ]
-                ]);
-            }
-
             $files = [];
             $stats = [
                 'total' => 0,
@@ -113,29 +129,84 @@ class FileController extends Controller
                 'others' => 0,
                 'total_size' => 0
             ];
-
-            // Buscar arquivos em todas as categorias ou categoria específica
-            $categories = $category ? [$category] : ['image', 'video', 'audio', 'other'];
             
-            foreach ($categories as $cat) {
-                $categoryPath = "{$basePath}/{$cat}";
+            // Verificar se Supabase está configurado
+            if ($this->supabaseService->isConfigured()) {
+                // Listar arquivos do Supabase
+                $prefix = "user-media/{$userId}/";
+                $supabaseFiles = $this->supabaseService->listFiles($prefix);
                 
-                if (Storage::disk('public')->exists($categoryPath)) {
-                    $categoryFiles = Storage::disk('public')->files($categoryPath);
+                foreach ($supabaseFiles as $file) {
+                    if (!isset($file['name']) || empty($file['name'])) continue;
                     
-                    foreach ($categoryFiles as $filePath) {
-                        $fileName = basename($filePath);
-                        $fileInfo = $this->getFileInfo($filePath, $cat);
+                    $filePath = $file['name'];
+                    $pathParts = explode('/', $filePath);
+                    $fileName = end($pathParts);
+                    $cat = count($pathParts) >= 4 ? $pathParts[3] : 'other';
+                    
+                    // Filtrar por categoria se especificada
+                    if ($category && $cat !== $category) continue;
+                    
+                    $fileInfo = [
+                        'id' => $fileName,
+                        'name' => $fileName,
+                        'original_name' => $fileName,
+                        'path' => $filePath,
+                        'url' => '/api/files/serve/' . $filePath,
+                        'direct_url' => $this->supabaseService->getPublicUrl($filePath),
+                        'size' => $file['metadata']['size'] ?? 0,
+                        'type' => $file['metadata']['mimetype'] ?? 'application/octet-stream',
+                        'category' => $cat,
+                        'modified_at' => $file['updated_at'] ?? $file['created_at'] ?? now()->toISOString(),
+                        'storage' => 'supabase'
+                    ];
+                    
+                    // Filtrar por busca se fornecida
+                    if ($search && !str_contains(strtolower($fileInfo['original_name']), strtolower($search))) {
+                        continue;
+                    }
+                    
+                    $files[] = $fileInfo;
+                    $stats['total']++;
+                    $stats[$cat === 'image' ? 'images' : ($cat === 'video' ? 'videos' : ($cat === 'audio' ? 'audios' : 'others'))]++;
+                    $stats['total_size'] += $fileInfo['size'];
+                }
+            } else {
+                // Listar arquivos do storage local
+                $basePath = "user-media/{$userId}";
+                
+                // Verificar se o diretório existe
+                if (!Storage::disk('public')->exists($basePath)) {
+                    return response()->json([
+                        'success' => true,
+                        'files' => [],
+                        'stats' => $stats
+                    ]);
+                }
+
+                // Buscar arquivos em todas as categorias ou categoria específica
+                $categories = $category ? [$category] : ['image', 'video', 'audio', 'other'];
+                
+                foreach ($categories as $cat) {
+                    $categoryPath = "{$basePath}/{$cat}";
+                    
+                    if (Storage::disk('public')->exists($categoryPath)) {
+                        $categoryFiles = Storage::disk('public')->files($categoryPath);
                         
-                        // Filtrar por busca se fornecida
-                        if ($search && !str_contains(strtolower($fileInfo['original_name']), strtolower($search))) {
-                            continue;
+                        foreach ($categoryFiles as $filePath) {
+                            $fileName = basename($filePath);
+                            $fileInfo = $this->getFileInfo($filePath, $cat);
+                            
+                            // Filtrar por busca se fornecida
+                            if ($search && !str_contains(strtolower($fileInfo['original_name']), strtolower($search))) {
+                                continue;
+                            }
+                            
+                            $files[] = $fileInfo;
+                            $stats['total']++;
+                            $stats[$cat === 'image' ? 'images' : ($cat === 'video' ? 'videos' : ($cat === 'audio' ? 'audios' : 'others'))]++;
+                            $stats['total_size'] += $fileInfo['size'];
                         }
-                        
-                        $files[] = $fileInfo;
-                        $stats['total']++;
-                        $stats[$cat === 'image' ? 'images' : ($cat === 'video' ? 'videos' : ($cat === 'audio' ? 'audios' : 'others'))]++;
-                        $stats['total_size'] += $fileInfo['size'];
                     }
                 }
             }
@@ -177,6 +248,24 @@ class FileController extends Controller
                 ], 403);
             }
 
+            // Tentar deletar do Supabase primeiro, se configurado
+            if ($this->supabaseService->isConfigured()) {
+                try {
+                    $deleted = $this->supabaseService->deleteFile($filePath);
+                    
+                    if ($deleted) {
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Arquivo deletado com sucesso'
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Log do erro e continua para o armazenamento local
+                    \Log::warning('Falha ao deletar arquivo do Supabase: ' . $e->getMessage());
+                }
+            }
+
+            // Fallback para armazenamento local
             // Verificar se o arquivo existe
             if (!Storage::disk('public')->exists($filePath)) {
                 return response()->json([
@@ -220,16 +309,27 @@ class FileController extends Controller
                 "{$basePath}/other"
             ];
 
-            foreach ($directories as $dir) {
-                if (!Storage::disk('public')->exists($dir)) {
-                    Storage::disk('public')->makeDirectory($dir);
+            $storageType = 'local';
+            
+            // Verificar se Supabase está configurado
+            if ($this->supabaseService->isConfigured()) {
+                $storageType = 'supabase';
+                // Para Supabase, os diretórios são criados automaticamente no upload
+                \Log::info('Supabase configurado para usuário: ' . $userId);
+            } else {
+                // Criar diretórios no armazenamento local
+                foreach ($directories as $dir) {
+                    if (!Storage::disk('public')->exists($dir)) {
+                        Storage::disk('public')->makeDirectory($dir);
+                    }
                 }
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Storage configurado com sucesso',
-                'directories' => $directories
+                'directories' => $directories,
+                'storage_type' => $storageType
             ]);
 
         } catch (\Exception $e) {
@@ -257,12 +357,14 @@ class FileController extends Controller
             'name' => $fileName,
             'original_name' => $originalName,
             'path' => $filePath,
-            'url' => Storage::disk('public')->url($filePath),
+            'url' => '/api/files/serve/' . $filePath,
+            'direct_url' => Storage::disk('public')->url($filePath),
             'size' => $size,
             'size_formatted' => $this->formatBytes($size),
             'category' => $category,
             'modified_at' => $lastModified,
-            'modified_at_formatted' => date('d/m/Y H:i', $lastModified)
+            'modified_at_formatted' => date('d/m/Y H:i', $lastModified),
+            'storage' => 'local'
         ];
     }
 
@@ -275,5 +377,94 @@ class FileController extends Controller
         }
         
         return round($bytes, $precision) . ' ' . $units[$i];
+    }
+
+    public function serveFile(Request $request, $path)
+    {
+        try {
+            // Tentar autenticação via token na query string primeiro
+            $token = $request->query('token');
+            $userId = null;
+            
+            if ($token) {
+                // Verificar se é um token de API
+                $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+                if ($accessToken && $accessToken->tokenable) {
+                    $userId = $accessToken->tokenable->id;
+                } else {
+                    // Fallback para verificação de CSRF token (se necessário)
+                    // Por enquanto, vamos tentar autenticação normal
+                    $userId = Auth::id();
+                }
+            } else {
+                $userId = Auth::id();
+            }
+            
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Não autenticado'
+                ], 401);
+            }
+            
+            // Verificar se o arquivo pertence ao usuário
+            if (!str_starts_with($path, "user-media/{$userId}/")) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Acesso negado'
+                ], 403);
+            }
+
+            $forceDownload = $request->query('download') === '1';
+            
+            // Tentar servir do Supabase primeiro, se configurado
+            if ($this->supabaseService->isConfigured()) {
+                $publicUrl = $this->supabaseService->getPublicUrl($path);
+                
+                if ($forceDownload) {
+                    // Para download forçado, fazer proxy do arquivo
+                    $fileResponse = \Illuminate\Support\Facades\Http::get($publicUrl);
+                    if ($fileResponse->successful()) {
+                        $fileName = basename($path);
+                        return response($fileResponse->body())
+                            ->header('Content-Type', $fileResponse->header('Content-Type') ?? 'application/octet-stream')
+                            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
+                            ->header('Cache-Control', 'no-cache');
+                    }
+                } else {
+                    return redirect($publicUrl);
+                }
+            }
+
+            // Fallback para armazenamento local
+            if (!Storage::disk('public')->exists($path)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Arquivo não encontrado'
+                ], 404);
+            }
+
+            $fileName = basename($path);
+            
+            if ($forceDownload) {
+                $filePath = Storage::disk('public')->path($path);
+                return response()->download($filePath, $fileName);
+            } else {
+                $file = Storage::disk('public')->get($path);
+                $mimeType = Storage::disk('public')->mimeType($path);
+
+                return response($file, 200, [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+                    'Cache-Control' => 'public, max-age=3600',
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao servir arquivo: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

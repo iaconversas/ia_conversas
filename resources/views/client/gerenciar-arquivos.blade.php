@@ -2,7 +2,7 @@
     <flux:heading size="xl">Gerenciador de Arquivos</flux:heading>
     <flux:subheading>Upload e Gerenciamento de Mídia</flux:subheading>
 
-    <div class="mt-6 space-y-6">
+    <div class="space-y-6">
         <!-- Estatísticas -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <flux:card class="border-l-4 border-l-blue-500">
@@ -241,6 +241,27 @@
         let filteredFiles = [];
         let activeCategory = 'all';
         let fileToDelete = null;
+        let apiToken = null;
+        
+        // Gerar token de API na inicialização
+        async function generateApiToken() {
+            try {
+                const response = await fetch('/api/generate-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.token) {
+                    apiToken = data.token;
+                }
+            } catch (error) {
+                console.error('Erro ao gerar token de API:', error);
+            }
+        }
 
         // Carregar arquivos ao inicializar
         document.addEventListener('DOMContentLoaded', function() {
@@ -254,6 +275,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiToken}`,
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
@@ -282,11 +304,18 @@
                     params.append('search', searchTerm);
                 }
 
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (apiToken) {
+                    headers['Authorization'] = `Bearer ${apiToken}`;
+                } else {
+                    headers['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                }
+                
                 const response = await fetch(`/api/files/list?${params}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
+                    headers: headers
                 });
 
                 const data = await response.json();
@@ -312,6 +341,12 @@
             document.getElementById('totalSize').textContent = formatBytes(stats.total_size);
         }
 
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         function renderFiles() {
             const container = document.getElementById('filesGrid');
             const subheading = document.getElementById('filesSubheading');
@@ -330,14 +365,14 @@
             container.innerHTML = filteredFiles.map(file => `
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                     <!-- Preview -->
-                    <div class="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer" onclick="previewFile('${file.path}', '${file.category}', '${file.original_name}')">
+                    <div class="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer" onclick="previewFile('${escapeHtml(file.path)}', '${file.category}', '${escapeHtml(file.original_name)}')">
                         ${getFilePreview(file)}
                     </div>
                     
                     <!-- Info -->
                     <div class="p-3">
-                        <div class="font-medium text-sm truncate" title="${file.original_name}">
-                            ${file.original_name}
+                        <div class="font-medium text-sm truncate" title="${escapeHtml(file.original_name)}">
+                            ${escapeHtml(file.original_name)}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">
                             ${file.size_formatted} • ${file.modified_at_formatted}
@@ -347,17 +382,17 @@
                                 ${getCategoryLabel(file.category)}
                             </span>
                             <div class="flex space-x-1">
-                                <button onclick="copyFileUrl('${file.url}')" class="p-1 text-gray-400 hover:text-blue-600 transition-colors" title="Copiar Link">
+                                <button onclick="copyFileUrl('${escapeHtml(file.url)}')" class="p-1 text-gray-400 hover:text-blue-600 transition-colors" title="Copiar Link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                     </svg>
                                 </button>
-                                <button onclick="downloadFile('${file.url}', '${file.original_name}')" class="p-1 text-gray-400 hover:text-green-600 transition-colors" title="Download">
+                                <button onclick="downloadFile('${escapeHtml(file.path)}', '${escapeHtml(file.original_name)}')" class="p-1 text-gray-400 hover:text-green-600 transition-colors" title="Download">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m-4-4V3"></path>
                                     </svg>
                                 </button>
-                                <button onclick="deleteFile('${file.path}', '${file.original_name}')" class="p-1 text-gray-400 hover:text-red-600 transition-colors" title="Excluir">
+                                <button onclick="deleteFile('${escapeHtml(file.path)}', '${escapeHtml(file.original_name)}')" class="p-1 text-gray-400 hover:text-red-600 transition-colors" title="Excluir">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
@@ -371,7 +406,13 @@
 
         function getFilePreview(file) {
             if (file.category === 'image') {
-                return `<img src="${file.url}" alt="${file.original_name}" class="w-full h-full object-cover">`;
+                let url = file.url;
+                // Adicionar token de autenticação para URLs da API
+                if (url.startsWith('/api/files/serve/')) {
+                    const token = apiToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    url += `?token=${encodeURIComponent(token)}`;
+                }
+                return `<img src="${url}" alt="${escapeHtml(file.original_name)}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=&quot;w-full h-full flex items-center justify-center bg-gray-100 text-gray-500&quot;>❌ Erro ao carregar</div>'">`;
             } else if (file.category === 'video') {
                 return `
                     <div class="text-purple-500">
@@ -528,12 +569,18 @@
         async function uploadSingleFile(file) {
             const formData = new FormData();
             formData.append('file', file);
+            
+            const headers = {};
+            
+            if (apiToken) {
+                headers['Authorization'] = `Bearer ${apiToken}`;
+            } else {
+                headers['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            }
 
             const response = await fetch('/api/files/upload', {
                 method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
+                headers: headers,
                 body: formData
             });
 
@@ -570,10 +617,18 @@
             title.textContent = name;
             info.textContent = `Categoria: ${getCategoryLabel(category)}`;
             
-            const url = `/storage/${path}`;
+            // Encontrar o arquivo na lista atual para obter a URL correta
+            const file = currentFiles.find(f => f.path === path);
+            let url = file ? file.url : `/storage/${path}`;
+            
+            // Adicionar token de autenticação para URLs da API
+            if (url.startsWith('/api/files/serve/')) {
+                const token = apiToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                url += `?token=${encodeURIComponent(token)}`;
+            }
             
             if (category === 'image') {
-                content.innerHTML = `<img src="${url}" alt="${name}" class="max-w-full max-h-full object-contain">`;
+                content.innerHTML = `<img src="${url}" alt="${escapeHtml(name)}" class="max-w-full max-h-full object-contain" onerror="this.parentElement.innerHTML='<div class=&quot;text-center p-4 text-gray-500&quot;>❌ Erro ao carregar imagem</div>'">`;
             } else if (category === 'video') {
                 content.innerHTML = `<video controls class="max-w-full max-h-full"><source src="${url}" type="video/mp4">Seu navegador não suporta vídeo.</video>`;
             } else if (category === 'audio') {
@@ -590,22 +645,51 @@
         }
 
         function copyFileUrl(url) {
-            const fullUrl = window.location.origin + url;
-            navigator.clipboard.writeText(fullUrl).then(() => {
-                showToast('success', 'Link copiado', 'URL do arquivo copiada para a área de transferência');
-            }).catch(() => {
-                showToast('error', 'Erro', 'Falha ao copiar link');
-            });
+            // Se a URL já é completa (Supabase), usar diretamente, senão construir URL completa
+            const fullUrl = url.startsWith('http') ? url : window.location.origin + url;
+            
+            // Verificar se o clipboard API está disponível
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(fullUrl).then(() => {
+                    showToast('success', 'Link copiado', 'URL do arquivo copiada para a área de transferência');
+                }).catch(() => {
+                    showToast('error', 'Erro', 'Falha ao copiar link');
+                });
+            } else {
+                // Fallback para navegadores mais antigos
+                const textArea = document.createElement('textarea');
+                textArea.value = fullUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('success', 'Link copiado', 'URL do arquivo copiada para a área de transferência');
+                } catch (err) {
+                    showToast('error', 'Erro', 'Falha ao copiar link');
+                }
+                document.body.removeChild(textArea);
+            }
         }
 
-        function downloadFile(url, filename) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function downloadFile(path, name) {
+            const file = currentFiles.find(f => f.path === path);
+            if (file) {
+                let url = file.url;
+                
+                // Adicionar token de autenticação para URLs da API
+                if (url.startsWith('/api/files/serve/')) {
+                    const token = apiToken || document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    url += `?token=${encodeURIComponent(token)}&download=1`;
+                }
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = name;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         }
 
         function deleteFile(path, name) {
@@ -622,12 +706,19 @@
             if (!fileToDelete) return;
 
             try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (apiToken) {
+                    headers['Authorization'] = `Bearer ${apiToken}`;
+                } else {
+                    headers['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                }
+                
                 const response = await fetch('/api/files/delete', {
                     method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
+                    headers: headers,
                     body: JSON.stringify({ path: fileToDelete.path })
                 });
 
@@ -698,7 +789,8 @@
         }
 
         // Inicializar aba ativa
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            await generateApiToken();
             setActiveCategory('all');
         });
     </script>

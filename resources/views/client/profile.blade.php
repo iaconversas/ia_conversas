@@ -47,7 +47,7 @@
                 </flux:field>
 
                 <div class="flex justify-end">
-                    <flux:button type="submit">Update Profile</flux:button>
+                    <flux:button type="submit" variant="primary">Update Profile</flux:button>
                 </div>
             </form>
         </flux:card>
@@ -99,38 +99,7 @@
             </div>
         </flux:card>
 
-        <!-- Roles and Permissions -->
-        <flux:card :padding="false">
-            <flux:card.header>
-                <flux:heading size="lg">Roles & Permissions</flux:heading>
-                <flux:subheading>Your assigned roles and permissions</flux:subheading>
-            </flux:card.header>
-            
-            <div class="space-y-4 p-6">
-                <div>
-                    <flux:label>Assigned Roles</flux:label>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                        @foreach($user->roles as $role)
-                            <flux:badge color="green" size="lg">
-                                {{ ucfirst($role->name) }}
-                            </flux:badge>
-                        @endforeach
-                    </div>
-                </div>
-                
-                <div>
-                    <flux:label>Available Permissions</flux:label>
-                    <div class="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        @foreach($user->getAllPermissions() as $permission)
-                            <div class="flex items-center space-x-2 p-2 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-                                <flux:icon.check class="h-4 w-4 text-green-500" />
-                                <span class="text-sm">{{ $permission->name }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </flux:card>
+
 
         <!-- Security Settings -->
         <flux:card :padding="false">

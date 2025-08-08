@@ -27,10 +27,13 @@
                 @if(auth()->user()->hasRole('client'))
                 <flux:navlist.group :heading="__('WhatsApp Tools')" class="grid">
                     <flux:navlist.item icon="device-phone-mobile" :href="route('client.evolution-manager')" :current="request()->routeIs('client.evolution-manager')" wire:navigate>{{ __('Evolution Manager') }}</flux:navlist.item>
-                    <flux:navlist.item icon="paper-airplane" :href="route('client.disparo-inteligente')" :current="request()->routeIs('client.disparo-inteligente')" wire:navigate>{{ __('Disparo Inteligente') }}</flux:navlist.item>
+
                     <flux:navlist.item icon="magnifying-glass" :href="route('client.lead-hunter')" :current="request()->routeIs('client.lead-hunter')" wire:navigate>{{ __('Lead Hunter') }}</flux:navlist.item>
-                    <flux:navlist.item icon="fire" :href="route('client.sim-warming')" :current="request()->routeIs('client.sim-warming')" wire:navigate>{{ __('SIM Warming') }}</flux:navlist.item>
                     <flux:navlist.item icon="folder" :href="route('client.gerenciar-arquivos')" :current="request()->routeIs('client.gerenciar-arquivos')" wire:navigate>{{ __('Gerenciar Arquivos') }}</flux:navlist.item>
+                    <flux:navlist.item icon="paper-airplane" :href="route('client.disparo-inteligente')" :current="request()->routeIs('client.disparo-inteligente')" wire:navigate>{{ __('Disparo Inteligente') }}</flux:navlist.item>
+                    <flux:navlist.item icon="fire" :href="route('client.aquecimento-chip')" :current="request()->routeIs('client.aquecimento-chip')" wire:navigate>
+                        {{ __('Aquecimento de Chip') }}
+                    </flux:navlist.item>
                 </flux:navlist.group>
                 
                 <flux:navlist.group :heading="__('Account')" class="grid">
@@ -48,6 +51,10 @@
 
                 <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
                 {{ __('Documentation') }}
+                </flux:navlist.item>
+                
+                <flux:navlist.item icon="sparkles" :href="route('figma-example')" :current="request()->routeIs('figma-example')" wire:navigate>
+                {{ __('Figma Example') }}
                 </flux:navlist.item>
             </flux:navlist>
 

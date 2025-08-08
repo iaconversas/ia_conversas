@@ -11,10 +11,11 @@
             </flux:tabs>
 
             <flux:tab.panel name="qr-code">
-                <div class="space-y-6">
-                    <flux:card class="border-l-4 border-l-orange-500">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" style="margin-bottom: 20px;">
+                    <!-- Configuração da Instância -->
+                    <flux:card style="margin-bottom: 20px; margin-top: 20px;">
                         <flux:card.header>
-                            <flux:heading size="lg">Gerar QR Code</flux:heading>
+                            <flux:heading size="lg">Configuração da Instância</flux:heading>
                             <flux:subheading>Crie uma nova instância WhatsApp</flux:subheading>
                         </flux:card.header>
 
@@ -23,7 +24,7 @@
                                 <flux:label>Nome da Instância</flux:label>
                                 <flux:input 
                                     id="instanceName" 
-                                    placeholder="Digite o nome da instância"
+                                    placeholder="Nome da instância Evolution API"
                                     class="w-full"
                                 />
                             </flux:field>
@@ -33,17 +34,11 @@
                                 size="sm"
                                 onclick="generateQRCode()"
                                 id="generateBtn"
+                                class="w-full"
                             >
                                 <flux:icon.qr-code class="size-4" />
                                 Gerar QR Code
                             </flux:button>
-
-                            <div id="qrCodeContainer" class="hidden">
-                                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-center">
-                                    <div id="qrCodeDisplay" class="mb-4"></div>
-                                    <div id="qrTimer" class="text-sm text-gray-600 dark:text-gray-400"></div>
-                                </div>
-                            </div>
 
                             <div id="loadingState" class="hidden">
                                 <div class="flex items-center justify-center p-6">
@@ -59,9 +54,33 @@
                             </div>
 
                             <div id="successState" class="hidden">
-                                <flux:banner variant="success">
+                                <flux:banner variant="success" id="successMessage">
                                     Instância conectada com sucesso!
                                 </flux:banner>
+                            </div>
+                        </div>
+                    </flux:card>
+
+                    <!-- QR Code WhatsApp -->
+                    <flux:card style="margin-bottom: 20px;">
+                        <flux:card.header>
+                            <flux:heading size="lg">QR Code WhatsApp</flux:heading>
+                            <flux:subheading>Escaneie o código para conectar</flux:subheading>
+                        </flux:card.header>
+
+                        <div class="flex flex-col items-center justify-center min-h-[300px] space-y-4">
+                            <div id="qrCodeContainer" class="hidden">
+                                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 text-center border">
+                                    <div id="qrCodeDisplay" class="mb-4"></div>
+                                    <div id="qrTimer" class="text-sm text-gray-600 dark:text-gray-400"></div>
+                                </div>
+                            </div>
+                            
+                            <div id="qrPlaceholder" class="text-center text-gray-500 dark:text-gray-400">
+                                <div class="w-32 h-32 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                                    <flux:icon.qr-code class="size-16" style="color: #155DFC" />
+                                </div>
+                                <p>Gere um QR Code para começar</p>
                             </div>
                         </div>
                     </flux:card>
@@ -69,8 +88,8 @@
             </flux:tab.panel>
 
             <flux:tab.panel name="webhook">
-                <div class="space-y-6">
-                    <flux:card class="border-l-4 border-l-blue-500">
+                <div class="space-y-6" style="margin-bottom: 20px;">
+                    <flux:card style="margin-bottom: 20px;">
                         <flux:card.header>
                             <flux:heading size="lg">Atualizar Webhook</flux:heading>
                             <flux:subheading>Configure webhooks para suas instâncias</flux:subheading>
@@ -92,6 +111,23 @@
                             <div class="flex items-center space-x-4">
                                 <flux:checkbox id="connectedOnly" />
                                 <flux:label for="connectedOnly">Mostrar apenas instâncias conectadas</flux:label>
+                            </div>
+
+                            <div class="flex items-center space-x-2 mb-3">
+                                <flux:button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onclick="selectConnectedInstances()"
+                                >
+                                    Marcar Todas Conectadas
+                                </flux:button>
+                                <flux:button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onclick="clearAllInstances()"
+                                >
+                                    Desmarcar Todas
+                                </flux:button>
                             </div>
 
                             <div id="instancesList" class="space-y-2 max-h-60 overflow-y-auto">
@@ -126,8 +162,8 @@
             </flux:tab.panel>
 
             <flux:tab.panel name="manage">
-                <div class="space-y-6">
-                    <flux:card class="border-l-4 border-l-green-500">
+                <div class="space-y-6" style="margin-bottom: 20px;">
+                    <flux:card style="margin-bottom: 20px;">
                         <flux:card.header>
                             <div class="flex items-center justify-between">
                                 <div>
@@ -151,11 +187,14 @@
                     </flux:card>
                 </div>
             </flux:tab.panel>
+
+
+
         </flux:tab.group>
     </div>
 
     <!-- Modal de Confirmação -->
-    <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div id="confirmModal" class="hidden fixed inset-0 flex items-center justify-center z-50" style="background-color: rgba(0, 0, 0, 0.25);">
         <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
             <flux:heading size="lg" class="mb-4">Confirmar Ação</flux:heading>
             <p id="confirmMessage" class="text-gray-600 dark:text-gray-400 mb-6"></p>
@@ -172,7 +211,9 @@
 
     <script>
         // Configurações do backend
-        const config = @json($config);
+        if (typeof config === 'undefined') {
+            var config = @json($config);
+        }
         
         let activeTab = 'qr-code';
         let qrTimer = null;
@@ -223,7 +264,9 @@
                     
                     // Verificar se a resposta não está vazia
                     if (!text || text.trim() === '') {
-                        console.error('Resposta JSON vazia do servidor ao atualizar QR Code');
+                        console.log('Resposta JSON vazia do servidor ao atualizar QR Code - Instância já conectada');
+                        clearInterval(qrTimer);
+                        showSuccess('Instância já está conectada!');
                         return;
                     }
                     
@@ -270,8 +313,13 @@
                 }
                 
                 if (response.ok) {
-                    displayQRCode(data);
-                    startQRTimer();
+                    // Verificar se a instância já está conectada
+                    if (data.connected) {
+                        showSuccess('Instância já está conectada!');
+                    } else {
+                        displayQRCode(data);
+                        startQRTimer();
+                    }
                 } else {
                     showError(data.message || 'Erro ao gerar QR Code');
                 }
@@ -284,31 +332,33 @@
             hideLoading();
             const container = document.getElementById('qrCodeContainer');
             const display = document.getElementById('qrCodeDisplay');
+            const placeholder = document.getElementById('qrPlaceholder');
             
             // Suporte a diferentes formatos de resposta
             if (data.qrcode) {
                 if (data.qrcode.startsWith('data:image')) {
                     // Já é um data URL completo
-                    display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="${data.qrcode}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
+                    display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><div class="text-center p-4">📱 QR Code disponível</div></div>`;
                 } else if (data.qrcode.startsWith('/9j/') || data.qrcode.startsWith('iVBORw0KGgo')) {
                     // É base64 puro (JPEG ou PNG)
                     const mimeType = data.qrcode.startsWith('/9j/') ? 'jpeg' : 'png';
-                    display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="data:image/${mimeType};base64,${data.qrcode}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
+                    display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><div class="text-center p-4">📱 QR Code disponível</div></div>`;
                 } else {
                     // Assumir que é base64 PNG por padrão
-                    display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="data:image/png;base64,${data.qrcode}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
+                    display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><div class="text-center p-4">📱 QR Code disponível</div></div>`;
                 }
             } else if (data.base64) {
                 // Campo base64 separado
-                display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="data:image/png;base64,${data.base64}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
+                display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><div class="text-center p-4">📱 QR Code disponível</div></div>`;
             } else if (data.image) {
                 // Campo image
-                display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><img src="${data.image}" alt="QR Code" class="mx-auto max-w-xs"></div>`;
+                display.innerHTML = `<div class="bg-white p-4 rounded inline-block"><div class="text-center p-4">📱 QR Code disponível</div></div>`;
             } else {
                 display.innerHTML = '<p class="text-gray-500">QR Code gerado com sucesso</p>';
             }
             
             container.classList.remove('hidden');
+            placeholder.classList.add('hidden');
         }
 
         function startQRTimer() {
@@ -399,7 +449,7 @@
                 
                 if (data.connected) {
                     clearInterval(qrTimer);
-                    showSuccess();
+                    showSuccess('Instância já está conectada!');
                 } else if (data.qrcode) {
                     displayQRCode(data);
                 }
@@ -413,12 +463,12 @@
             try {
                 console.log('Carregando instâncias...');
                 console.log('Evolution URL:', config.evolution_url);
-                console.log('API Key:', config.evolution_api_key ? 'Configurada' : 'Não configurada');
+                console.log('API Key:', config.has_evolution_api_key ? 'Configurada' : 'Não configurada');
                 
-                const response = await fetch(config.evolution_url + '/instance/fetchInstances', {
+                const response = await fetch('/client/api/instances', {
                     headers: {
-                        'apikey': config.evolution_api_key,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
 
@@ -439,11 +489,28 @@
                 
                 let instances;
                 try {
-                    instances = JSON.parse(text);
-                    console.log('Instâncias carregadas:', instances);
+                    const responseData = JSON.parse(text);
+                    console.log('Dados da resposta completa:', responseData);
+                    
+                    // Verificar se a resposta tem a estrutura esperada
+                    if (responseData.success && responseData.instances) {
+                        // Resposta do WhatsAppController
+                        instances = responseData.instances;
+                    } else if (Array.isArray(responseData)) {
+                        // Resposta direta da Evolution API
+                        instances = responseData;
+                    } else {
+                        console.error('Estrutura de resposta não reconhecida:', responseData);
+                        instances = [];
+                    }
+                    
+                    console.log('Instâncias extraídas:', instances);
+                    // Definir instâncias globalmente para uso em outras funções
+                    window.instances = instances;
                 } catch (e) {
                     console.error('Erro ao fazer parse JSON das instâncias:', e);
                     console.error('Texto da resposta:', text);
+                    window.instances = [];
                     displayInstancesList([]);
                     return;
                 }
@@ -460,13 +527,33 @@
             const container = document.getElementById('instancesList');
             const connectedOnly = document.getElementById('connectedOnly').checked;
             
-            if (!instances || !Array.isArray(instances)) {
-                console.error('Instâncias inválidas ou não é um array:', instances);
+            // Verificar se instances é válido
+            if (!instances) {
+                console.error('Instâncias é null ou undefined:', instances);
                 container.innerHTML = '<div class="p-4 text-center text-gray-500">Nenhuma instância encontrada</div>';
                 return;
             }
             
-            if (instances.length === 0) {
+            // Se instances é um objeto com propriedade instances, extrair o array
+            let instancesArray = instances;
+            if (typeof instances === 'object' && !Array.isArray(instances)) {
+                if (instances.success && instances.instances) {
+                    instancesArray = instances.instances;
+                    console.log('Extraindo array de instâncias do objeto de resposta:', instancesArray);
+                } else {
+                    console.error('Objeto de instâncias não tem a estrutura esperada:', instances);
+                    container.innerHTML = '<div class="p-4 text-center text-red-500">Estrutura de resposta inválida</div>';
+                    return;
+                }
+            }
+            
+            if (!Array.isArray(instancesArray)) {
+                console.error('Instâncias não é um array após processamento:', instancesArray);
+                container.innerHTML = '<div class="p-4 text-center text-red-500">Dados de instâncias inválidos</div>';
+                return;
+            }
+            
+            if (instancesArray.length === 0) {
                 console.log('Array de instâncias está vazio');
                 container.innerHTML = '<div class="p-4 text-center text-gray-500">Nenhuma instância encontrada</div>';
                 return;
@@ -475,12 +562,12 @@
             console.log('Filtro "Apenas conectadas":', connectedOnly);
             
             const filteredInstances = connectedOnly ? 
-                instances.filter(instance => {
+                instancesArray.filter(instance => {
                     const isConnected = instance.connectionStatus === 'open';
-                    console.log(`Instância ${instance.instance?.instanceName || 'sem nome'}: ${instance.connectionStatus} (conectada: ${isConnected})`);
+                    console.log(`Instância ${instance.instance?.instanceName || instance.name || 'sem nome'}: ${instance.connectionStatus} (conectada: ${isConnected})`);
                     return isConnected;
                 }) : 
-                instances;
+                instancesArray;
                 
             console.log('Instâncias filtradas:', filteredInstances);
             
@@ -515,12 +602,48 @@
                 
                 console.log(`Processando instância (webhook): ${instanceName}, status: ${connectionStatus}`);
                 
+                // Obter foto de perfil
+                const profilePicUrl = instance.profilePicUrl || null;
+                const profileName = instance.profileName || instanceName;
+                
+                const isConnected = connectionStatus === 'open';
+                
                 return `
                     <div class="flex items-center space-x-3 p-3 border rounded-lg">
-                        <input type="checkbox" class="instance-checkbox" value="${instanceName}" />
-                        <div class="flex-1">
-                            <span class="font-medium">${instanceName}</span>
-                            <span class="ml-2 px-2 py-1 text-xs rounded-full ${
+                        <div class="relative">
+                            <input type="checkbox" class="instance-checkbox" value="${instanceName}" ${!isConnected ? 'disabled' : ''} />
+                            ${!isConnected ? `
+                                <div class="absolute -top-1 -right-1 w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center" title="Instância desconectada">
+                                    <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="flex items-center justify-center">
+                            ${profilePicUrl ? `
+                                <img src="${profilePicUrl}" 
+                                     alt="Foto de ${profileName}" 
+                                     class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                />
+                                <div class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm font-medium" style="display: none;">
+                                    ${profileName.charAt(0).toUpperCase()}
+                                </div>
+                            ` : `
+                                <div class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm font-medium">
+                                    ${profileName.charAt(0).toUpperCase()}
+                                </div>
+                            `}
+                        </div>
+                        <div class="flex-1 ml-3">
+                            <div class="font-medium">${instanceName}</div>
+                            ${profileName !== instanceName ? `
+                                <div class="text-sm text-gray-500 dark:text-gray-400">
+                                    ${profileName}
+                                </div>
+                            ` : ''}
+                            <span class="inline-block mt-1 px-2 py-1 text-xs rounded-full ${
                                 connectionStatus === 'open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                             }">
                                 ${connectionStatus === 'open' ? 'Conectado' : 'Desconectado'}
@@ -553,7 +676,7 @@
                     console.log('URL do webhook:', webhookUrl);
                     console.log('Fazendo requisição direta para Evolution API');
                     console.log('URL da Evolution API:', config.evolution_url);
-                    console.log('API Key:', config.evolution_api_key ? 'Configurada' : 'NÃO CONFIGURADA');
+                    console.log('API Key:', config.has_evolution_api_key ? 'Configurada' : 'NÃO CONFIGURADA');
                     
                     // Codificar o nome da instância para lidar com espaços e caracteres especiais
                     const encodedInstanceName = encodeURIComponent(instanceName);
@@ -598,14 +721,16 @@
                         console.warn('A URL do webhook ainda contém espaços no início ou fim');
                     }
                     
-                    // Fazer requisição direta para a Evolution API
-                    const response = await fetch(requestUrl, {
+                    // Fazer requisição para o endpoint seguro do backend
+                    const response = await fetch(`/client/api/instances/${encodedInstanceName}/webhook`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'apikey': config.evolution_api_key
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                         },
-                        body: JSON.stringify(requestBody)
+                        body: JSON.stringify({
+                            webhook_url: finalWebhookUrl
+                        })
                     });
 
                     console.log(`Response status para ${instanceName}:`, response.status, response.statusText);
@@ -664,10 +789,10 @@
         async function refreshInstances() {
             try {
                 console.log('Atualizando lista de instâncias...');
-                const response = await fetch(config.evolution_url + '/instance/fetchInstances', {
+                const response = await fetch('/client/api/instances', {
                     headers: {
-                        'apikey': config.evolution_api_key,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
 
@@ -688,10 +813,27 @@
                 
                 let instances;
                 try {
-                    instances = JSON.parse(text);
-                    console.log('Instâncias atualizadas (refreshInstances):', instances);
+                    const responseData = JSON.parse(text);
+                    console.log('Dados da resposta completa (refreshInstances):', responseData);
+                    
+                    // Verificar se a resposta tem a estrutura esperada
+                    if (responseData.success && responseData.instances) {
+                        // Resposta do WhatsAppController
+                        instances = responseData.instances;
+                    } else if (Array.isArray(responseData)) {
+                        // Resposta direta da Evolution API
+                        instances = responseData;
+                    } else {
+                        console.error('Estrutura de resposta não reconhecida (refreshInstances):', responseData);
+                        instances = [];
+                    }
+                    
+                    console.log('Instâncias extraídas (refreshInstances):', instances);
                     console.log('Tipo de dados (refreshInstances):', typeof instances);
                     console.log('É array? (refreshInstances)', Array.isArray(instances));
+                    
+                    // Definir instâncias globalmente para uso em outras funções
+                    window.instances = instances;
                     
                     // Log detalhado de cada instância recebida na refreshInstances
                     if (Array.isArray(instances)) {
@@ -703,6 +845,7 @@
                 } catch (e) {
                     console.error('Erro ao fazer parse JSON das instâncias:', e);
                     console.error('Texto da resposta:', text);
+                    window.instances = [];
                     displayInstancesTable([]);
                     return;
                 }
@@ -735,6 +878,7 @@
                     <table class="w-full">
                         <thead class="bg-gray-50 dark:bg-gray-800">
                             <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instância</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
@@ -767,12 +911,39 @@
                                 
                                 console.log(`Processando instância: ${instanceName}, status: ${connectionStatus}`);
                                 
+                                // Obter foto de perfil
+                                const profilePicUrl = instance.profilePicUrl || null;
+                                const profileName = instance.profileName || instanceName;
+                                
                                 return `
                                     <tr>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <div class="flex items-center justify-center">
+                                                ${profilePicUrl ? `
+                                                    <img src="${profilePicUrl}" 
+                                                         alt="Foto de ${profileName}" 
+                                                         class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                                    />
+                                                    <div class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm font-medium" style="display: none;">
+                                                        ${profileName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                ` : `
+                                                    <div class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm font-medium">
+                                                        ${profileName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                `}
+                                            </div>
+                                        </td>
                                         <td class="px-4 py-4 whitespace-nowrap">
                                             <div class="font-medium text-gray-900 dark:text-gray-100">
                                                 ${instanceName}
                                             </div>
+                                            ${profileName !== instanceName ? `
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                    ${profileName}
+                                                </div>
+                                            ` : ''}
                                         </td>
                                         <td class="px-4 py-4 whitespace-nowrap">
                                             <span class="px-2 py-1 text-xs rounded-full ${
@@ -787,8 +958,13 @@
                                                         class="text-yellow-600 hover:text-yellow-900 text-sm">
                                                     Desconectar
                                                 </button>
-                                            ` : ''}
-                                            <button onclick="deleteInstance('${instanceName}')" 
+                                            ` : `
+                                                <button onclick="connectInstance('${instanceName}')" 
+                                                        class="text-green-600 hover:text-green-900 text-sm">
+                                                    Conectar
+                                                </button>
+                                            `}
+                                            <button onclick="deleteInstance('${instanceName}', '${connectionStatus}')" 
                                                     class="text-red-600 hover:text-red-900 text-sm">
                                                 Excluir
                                             </button>
@@ -809,20 +985,111 @@
             );
         }
 
-        function deleteInstance(instanceName) {
+        function connectInstance(instanceName) {
+            showConfirmModal(
+                `Deseja conectar a instância "${instanceName}"?`,
+                () => performConnect(instanceName)
+            );
+        }
+
+        function deleteInstance(instanceName, connectionStatus) {
+            if (connectionStatus === 'open') {
+                showConfirmModal(
+                    'Para excluir esta instância, você deve desconectá-la primeiro.',
+                    null
+                );
+                return;
+            }
+            
             showConfirmModal(
                 `Deseja excluir permanentemente a instância "${instanceName}"?`,
                 () => performDelete(instanceName)
             );
         }
 
+        async function performConnect(instanceName) {
+            try {
+                showLoading();
+                
+                console.log(`Tentando conectar instância: ${instanceName}`);
+                
+                // Primeiro, tentar conectar a instância para gerar o QR Code
+                const response = await fetch(`/client/api/instances/${instanceName}/connect`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+
+                console.log(`Connect Response Status: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    console.log(`Connect Response Text: ${text.substring(0, 500)}`);
+                    
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                        console.log('Connect Response Data:', data);
+                    } catch (parseError) {
+                        console.error('Erro ao fazer parse da resposta de conexão:', parseError);
+                        console.error('Texto da resposta:', text);
+                        hideLoading();
+                        showError('Resposta inválida da API Evolution');
+                        return;
+                    }
+                    
+                    // Se retornou um QR Code, exibir
+                    if (data.qrcode || data.base64 || data.qr) {
+                        let qrCode = data.qrcode || data.base64 || data.qr;
+                        console.log('QR Code encontrado:', qrCode.substring(0, 100) + '...');
+                        
+                        // Verificar se o QR Code já tem o prefixo data:image
+                        if (!qrCode.startsWith('data:image')) {
+                            qrCode = `data:image/png;base64,${qrCode}`;
+                        }
+                        
+                        console.log('QR Code formatado, exibindo em modal...');
+                        hideLoading();
+                        showQRCodeModal(qrCode, instanceName);
+                        
+                        // Iniciar timer do QR Code
+                        startQRTimer();
+                        
+                        // Iniciar monitoramento da conexão
+                        startConnectionMonitoring(instanceName);
+                    } else if (data.connected || data.status === 'open') {
+                        // Se já está conectada
+                        console.log('Instância já conectada');
+                        hideLoading();
+                        refreshInstances();
+                        showSuccess('Instância já está conectada!');
+                    } else {
+                        console.log('Resposta da API não contém QR Code nem status de conectado:', data);
+                        hideLoading();
+                        showError('Não foi possível gerar o QR Code para conexão. Verifique se a instância existe e não está já conectada.');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error(`Erro HTTP ${response.status}: ${errorText}`);
+                    hideLoading();
+                    showError(`Erro ao conectar instância: ${response.status} ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Erro na função performConnect:', error);
+                hideLoading();
+                showError('Erro de conexão: ' + error.message);
+            }
+        }
+
         async function performDisconnect(instanceName) {
             try {
-                const response = await fetch(`${config.evolution_url}/instance/logout/${instanceName}`, {
-                    method: 'DELETE',
+                const response = await fetch(`/client/api/instances/${instanceName}/logout`, {
+                    method: 'POST',
                     headers: {
-                        'apikey': config.evolution_api_key,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
 
@@ -839,11 +1106,11 @@
 
         async function performDelete(instanceName) {
             try {
-                const response = await fetch(`${config.evolution_url}/instance/delete/${instanceName}`, {
+                const response = await fetch(`/client/api/instances/${instanceName}`, {
                     method: 'DELETE',
                     headers: {
-                        'apikey': config.evolution_api_key,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
 
@@ -889,8 +1156,16 @@
         function showSuccess(message = 'Operação realizada com sucesso!') {
             hideLoading();
             if (qrTimer) clearInterval(qrTimer);
+            
+            // Atualiza o texto da mensagem de sucesso
+            const successMessage = document.getElementById('successMessage');
+            if (successMessage) {
+                successMessage.textContent = message;
+            }
+            
             document.getElementById('successState').classList.remove('hidden');
             document.getElementById('qrCodeContainer').classList.add('hidden');
+            document.getElementById('qrPlaceholder').classList.remove('hidden');
             document.getElementById('errorState').classList.add('hidden');
         }
 
@@ -898,6 +1173,14 @@
             document.getElementById('confirmMessage').textContent = message;
             document.getElementById('confirmModal').classList.remove('hidden');
             pendingAction = action;
+            
+            // Se não há ação (apenas aviso), ocultar botão confirmar
+            const confirmButton = document.querySelector('#confirmModal flux\\:button[variant="danger"]');
+            if (action === null) {
+                if (confirmButton) confirmButton.style.display = 'none';
+            } else {
+                if (confirmButton) confirmButton.style.display = 'inline-flex';
+            }
         }
 
         function closeModal() {
@@ -912,13 +1195,163 @@
             }
         }
 
+        // Monitorar conexão da instância
+        function startConnectionMonitoring(instanceName) {
+            const connectionTimer = setInterval(async () => {
+                try {
+                    const response = await fetch('/client/api/instances', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const instances = await response.json();
+                        const targetInstance = instances.find(inst => 
+                            (inst.instance?.instanceName === instanceName) ||
+                            (inst.instanceName === instanceName) ||
+                            (inst.name === instanceName) ||
+                            (inst.id === instanceName)
+                        );
+                        
+                        if (targetInstance && targetInstance.connectionStatus === 'open') {
+                            clearInterval(connectionTimer);
+                            // Limpar também o timer do QR Code para evitar mensagem de expiração
+                            if (qrTimer) {
+                                clearInterval(qrTimer);
+                                qrTimer = null;
+                            }
+                            closeQRCodeModal();
+                            refreshInstances();
+                            showSuccess('Instância conectada com sucesso!');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao monitorar conexão:', error);
+                }
+            }, 3000); // Verificar a cada 3 segundos
+            
+            // Parar monitoramento após 5 minutos
+            setTimeout(() => {
+                clearInterval(connectionTimer);
+            }, 300000);
+        }
+
         // Carregar instâncias ao inicializar
         document.addEventListener('DOMContentLoaded', function() {
             loadInstances();
             refreshInstances();
+            
+            // Filtro de instâncias conectadas
+            const connectedOnlyElement = document.getElementById('connectedOnly');
+            if (connectedOnlyElement) {
+                connectedOnlyElement.addEventListener('change', loadInstances);
+            }
+            
+            // Event listener para fechar modal
+            const closeQRModalElement = document.getElementById('closeQRModal');
+            if (closeQRModalElement) {
+                closeQRModalElement.addEventListener('click', closeQRCodeModal);
+            }
+            
+            const qrCodeModalElement = document.getElementById('qrCodeModal');
+            if (qrCodeModalElement) {
+                qrCodeModalElement.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeQRCodeModal();
+                    }
+                });
+            }
         });
 
-        // Filtro de instâncias conectadas
-        document.getElementById('connectedOnly').addEventListener('change', loadInstances);
+        // Funções do Modal QR Code
+        function showQRCodeModal(qrCode, instanceName) {
+            document.getElementById('modalInstanceName').textContent = instanceName;
+            document.getElementById('modalQRCodeDisplay').innerHTML = `<div class="text-center p-4">📱 QR Code disponível</div>`;
+            document.getElementById('qrCodeModal').classList.remove('hidden');
+            
+            // Iniciar timer do modal
+            startModalQRTimer();
+        }
+
+        function closeQRCodeModal() {
+            document.getElementById('qrCodeModal').classList.add('hidden');
+            document.getElementById('modalQRCodeDisplay').innerHTML = '';
+            document.getElementById('modalQRTimer').textContent = '';
+            
+            // Limpar timers
+            if (qrTimer) {
+                clearInterval(qrTimer);
+                qrTimer = null;
+            }
+        }
+
+        function startModalQRTimer() {
+            let timeLeft = 120; // 2 minutos
+            const timerElement = document.getElementById('modalQRTimer');
+            
+            qrTimer = setInterval(async () => {
+                timeLeft--;
+                timerElement.textContent = `QR Code expira em: ${timeLeft}s`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(qrTimer);
+                    closeQRCodeModal();
+                    showError('QR Code expirado. Tente conectar novamente.');
+                }
+            }, 1000);
+        }
+
+        // Funções de seleção de instâncias
+        function selectConnectedInstances() {
+            const checkboxes = document.querySelectorAll('.instance-checkbox');
+            checkboxes.forEach(checkbox => {
+                // Encontrar o elemento pai que contém o status
+                const parentDiv = checkbox.closest('div');
+                const statusElement = parentDiv.querySelector('.bg-green-100');
+                
+                // Marcar apenas se tiver status conectado (classe bg-green-100)
+                checkbox.checked = statusElement !== null;
+            });
+        }
+
+        function clearAllInstances() {
+            const checkboxes = document.querySelectorAll('.instance-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+        
+
+        
+
+        
+
     </script>
+
+    <!-- Modal para QR Code -->
+    <div id="qrCodeModal" class="fixed inset-0 hidden z-50 flex items-center justify-center" style="background-color: rgba(0, 0, 0, 0.25);">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Conectar Instância</h3>
+                <button onclick="closeQRCodeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Escaneie o QR Code abaixo com seu WhatsApp para conectar a instância <strong id="modalInstanceName"></strong>:</p>
+                <div id="modalQRCodeDisplay" class="bg-white p-4 rounded inline-block mb-4"></div>
+                <div id="modalQRTimer" class="text-sm text-gray-600 dark:text-gray-400 mb-4"></div>
+                <div class="flex justify-center space-x-3">
+                    <button onclick="closeQRCodeModal()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </x-layouts.app>

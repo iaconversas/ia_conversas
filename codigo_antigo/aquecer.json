@@ -1,0 +1,565 @@
+{
+  "name": "Aquecedor",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "={{ $json.url_evolution }}/instance/fetchInstances",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.apikey }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        320
+      ],
+      "id": "a4cfa7c9-8734-43ff-b071-ec760bd1d089",
+      "name": "Pegar Instancias"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        816,
+        320
+      ],
+      "id": "e224d1bf-143d-48eb-aaf1-03665b356c0e",
+      "name": "Loop Over Items",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "ownerJid"
+            },
+            {
+              "fieldToAggregate": "name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        368,
+        320
+      ],
+      "id": "dfc714e6-7e2e-40a3-b02e-8c919eb265e4",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        48
+      ],
+      "id": "cb9e172c-0a2f-443b-88ca-c26b28d0458d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "X076la8h060IeV6c",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "aquecedor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        16
+      ],
+      "id": "30805429-3630-49fb-b53b-c71fbdefcff3",
+      "name": "Webhook",
+      "webhookId": "233ecd6d-20ba-4fe2-bb2f-64f784b0a3f3"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        16
+      ],
+      "id": "f29b1b52-fcca-4456-91e6-f4237ae66828",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "content": "## PÁGINA HTML",
+        "height": 280,
+        "width": 820
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -336,
+        -64
+      ],
+      "typeVersion": 1,
+      "id": "a1f307d1-508e-45a9-9021-4dc4a646825b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ce230095-452d-4769-a1fa-5714dc07a544",
+              "name": "URL_EVOLUTION",
+              "value": "https://evolution.iaconversas.com",
+              "type": "string"
+            },
+            {
+              "id": "ab5b3bbc-d759-42f7-9673-53f93572919c",
+              "name": "WEBHOOK_AQUECEDOR",
+              "value": "https://n8n.iaconversas.com/webhook/aquecer",
+              "type": "string"
+            },
+            {
+              "id": "741e8d4f-ecc0-47b2-807d-e10e98abb564",
+              "name": "APIKEY_GLOBAL",
+              "value": "5863c643c8bf6d84e8da8bb564ea13fc",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        16
+      ],
+      "id": "73fbedfe-613a-4726-96c5-be4b8a8b35e4",
+      "name": "DADOS"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.delay }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        576
+      ],
+      "id": "2c216b74-3932-491b-8453-9184d83b16e4",
+      "name": "Wait",
+      "webhookId": "6ad33347-722c-4056-a85b-d1082d3368a8",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aquecer",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        320
+      ],
+      "id": "527ec6f3-8631-481e-8b88-56106bab0735",
+      "name": "Webhook do Aquecedor",
+      "webhookId": "7f94dcf3-2c25-4ca5-bcc3-8310de71166d"
+    },
+    {
+      "parameters": {
+        "content": "## CREDENCIAL OPENAI",
+        "height": 280,
+        "width": 280,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        512,
+        -64
+      ],
+      "typeVersion": 1,
+      "id": "82b847ad-5126-426b-8fc3-9c60eea50b5c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## AQUECEDOR",
+        "height": 540,
+        "width": 1560,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -576,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "7c378019-fffc-4a75-87e9-f93f363dcfae",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tempoMin = 10 // Coloque seu tempo mínimo\nconst tempoMax = 30; // Coloque seu tempo máximo\n\nif (isNaN(tempoMin) || isNaN(tempoMax) || tempoMin > tempoMax) {\n  throw new Error('Preencha os campos de tempo corretamente!');\n}\n\nconst delay = Math.floor(Math.random() * (tempoMax - tempoMin + 1)) + tempoMin;\n\n// Retorne o resultado como um array de objetos\nreturn [\n  {\n    json: {\n      delay\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        576
+      ],
+      "id": "1487e26e-2013-4a49-976d-b4511ed10f5b",
+      "name": "Gerar Intervalo Aleatório",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Crie um texto aleatório sobre negócios com 50 a 150 caracteres. Não repita frases nem palavras anteriores. Forneça apenas o texto, sem explicações. Mantenha tom de voz femininio.\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        128,
+        576
+      ],
+      "id": "8cdafa1b-b9de-41b1-b89b-a0cd775378f0",
+      "name": "Gerador de Mensagem"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('Loop Over Items').item.json.name }}",
+        "remoteJid": "={{ $('Loop Over Items').item.json.ownerJid }}",
+        "messageText": "={{ $json.text }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        528,
+        576
+      ],
+      "id": "ce32eff8-59c6-404d-b96d-29558286d9d0",
+      "name": "Enviar Mensagem",
+      "credentials": {
+        "evolutionApi": {
+          "id": "1nwtwRPDMpGIv0WB",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html lang=\"pt-br\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Aquecedor de Chips</title>\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\n<style>\n  body {\n    background-color: #0d1117;\n    color: #c9d1d9;\n    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n  }\n\n  .card {\n    background-color: #161b22;\n    border: 2px solid #00ffae;\n    border-radius: 15px;\n    box-shadow: 0 0 10px rgba(0, 255, 174, 0.3);\n    padding: 20px;\n  }\n\n  h3 {\n    color: #00ffae;\n    font-weight: 600;\n  }\n\n  select.form-select,\n  input.form-control {\n    background-color: #0d1117;\n    color: #c9d1d9;\n    border: 1px solid #00ffae;\n    border-radius: 8px;\n    transition: border-color 0.3s ease;\n  }\n\n  select.form-select:focus,\n  input.form-control:focus {\n    border-color: #00ffae;\n    box-shadow: 0 0 5px rgba(0, 255, 174, 0.4);\n  }\n\n  .btn-start {\n    background-color: #00b86b;\n    border: none;\n    font-weight: bold;\n    transition: background-color 0.3s ease;\n  }\n\n  .btn-start:hover {\n    background-color: #00ffae;\n    color: #000;\n  }\n\n  .progress {\n    background-color: #30363d;\n    border-radius: 10px;\n    overflow: hidden;\n  }\n\n  .progress-bar {\n    background-color: #00ffae;\n    color: #000;\n    font-weight: bold;\n    transition: width 0.4s ease;\n  }\n\n  .status-text {\n    font-weight: 600;\n  }\n\n  .status-rodando {\n    color: #00ffae;\n  }\n\n  .status-finalizado {\n    color: #28a745;\n  }\n\n  .status-erro {\n    color: #ff6b6b;\n  }\n\n  .form-label-text {\n    font-size: 14px;\n    margin-bottom: 4px;\n    color: #c9d1d9;\n  }\n</style>\n</head>\n<body>\n<div class=\"container py-5\">\n  <div class=\"card mx-auto\" style=\"max-width: 500px;\">\n    <h3 class=\"text-center mb-4\">🔥 Aquecedor de Chips</h3>\n\n    <div class=\"mb-3\">\n      <div class=\"form-label-text\">Selecione as Instâncias</div>\n      <select class=\"form-select\" id=\"instancias\" multiple></select>\n    </div>\n\n    <div class=\"mb-3\">\n      <div class=\"form-label-text\">Quantas interações?</div>\n      <input type=\"number\" class=\"form-control\" id=\"interacoes\" min=\"1\" value=\"10\">\n    </div>\n\n    <div class=\"d-grid gap-2 mb-3\">\n      <button class=\"btn btn-start\" id=\"startBtn\">▶️ Iniciar Aquecimento</button>\n    </div>\n\n    <div class=\"progress mb-2\" style=\"height: 20px;\">\n      <div id=\"progressBar\" class=\"progress-bar\" role=\"progressbar\" style=\"width: 0%;\">0%</div>\n    </div>\n\n    <div class=\"text-center status-text mt-2\" id=\"status\" style=\"color: #c9d1d9;\">Status: <span class=\"text-warning\">Parado</span></div>\n  </div>\n</div>\n\n<script>\n  const URL_EVOLUTION = \"{{ $('DADOS').item.json.URL_EVOLUTION }}\";\n  const APIKEY_GLOBAL = \"{{ $('DADOS').item.json.APIKEY_GLOBAL }}\";\n  const WEBHOOK_AQUECEDOR = \"{{ $('DADOS').item.json.WEBHOOK_AQUECEDOR }}\";\n\n  async function carregarInstancias() {\n    try {\n      const resposta = await fetch(`${URL_EVOLUTION}/instance/fetchInstances`, {\n        method: \"GET\",\n        headers: { \"apikey\": APIKEY_GLOBAL }\n      });\n      const data = await resposta.json();\n      const select = document.getElementById(\"instancias\");\n      select.innerHTML = \"\"; // Limpa antes de popular\n      data.filter(i => i.connectionStatus === \"open\").forEach(inst => {\n        const opt = document.createElement(\"option\");\n        opt.value = inst.name;\n        opt.innerText = inst.name;\n        select.appendChild(opt);\n      });\n    } catch (err) {\n      alert(\"Erro ao carregar instâncias: \" + err.message);\n    }\n  }\n\n  window.onload = carregarInstancias;\n\n  document.getElementById(\"startBtn\").addEventListener(\"click\", async () => {\n    const instanciasSelecionadas = Array.from(document.getElementById(\"instancias\").selectedOptions).map(opt => opt.value);\n    const interacoes = parseInt(document.getElementById(\"interacoes\").value);\n    if (instanciasSelecionadas.length === 0 || interacoes <= 0) {\n      alert(\"Preencha todos os campos!\");\n      return;\n    }\n\n    document.getElementById(\"status\").innerHTML = 'Status: <span class=\"status-rodando\">Rodando...</span>';\n    document.getElementById(\"progressBar\").style.width = `0%`;\n    document.getElementById(\"progressBar\").innerText = `0%`;\n\n    for (let i = 1; i <= interacoes; i++) {\n      try {\n        const response = await fetch(WEBHOOK_AQUECEDOR, {\n          method: \"POST\",\n          headers: { \"Content-Type\": \"application/json\" },\n          body: JSON.stringify({\n            instancias: instanciasSelecionadas,\n            apikey_global: APIKEY_GLOBAL,\n            url_evolution: URL_EVOLUTION\n          })\n        });\n\n        if (!response.ok) throw new Error(\"Falha ao disparar interação!\");\n\n        const pct = Math.floor((i / interacoes) * 100);\n        document.getElementById(\"progressBar\").style.width = `${pct}%`;\n        document.getElementById(\"progressBar\").innerText = `${pct}%`;\n      } catch (error) {\n        console.error(error);\n        document.getElementById(\"status\").innerHTML = 'Status: <span class=\"status-erro\">❌ Erro!</span>';\n        return;\n      }\n    }\n\n    document.getElementById(\"status\").innerHTML = 'Status: <span class=\"status-finalizado\">✅ Finalizado!</span>';\n  });\n</script>\n</body>\n</html>\n"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        96,
+        16
+      ],
+      "id": "f40ea4c7-0fdd-493c-b06e-47183c24c782",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "content": "### Não precisa mais alterar aqui",
+        "height": 280,
+        "width": 180,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -336,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "994b6c4d-6c9d-4d68-af76-312b885650a9",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c2f14cfc-1c83-419c-95e9-fb04b6c7cee2",
+              "name": "apikey",
+              "value": "={{ $json.body.apikey_global }}",
+              "type": "string"
+            },
+            {
+              "id": "5d6f69cf-9984-424e-9a55-31a112500774",
+              "name": "url_evolution",
+              "value": "={{ $json.body.url_evolution }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        320
+      ],
+      "id": "c531b01c-2646-440d-b57d-6b4dc21e5a1d",
+      "name": "Não mexer"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pegar as instâncias do Webhook (dentro de body)\nconst instanciasWebhook = $('Webhook do Aquecedor').item.json.body.instancias || [];\n\n// Pegar todos os itens do HTTP Request\nconst httpItems = $('Pegar Instancias').all();\n\n// Filtrar e montar { name, ownerJid }\nconst instanciasValidas = httpItems\n  .map(item => item.json)\n  .filter(inst => instanciasWebhook.includes(inst.name))\n  .map(inst => ({\n    name: inst.name,\n    ownerJid: inst.ownerJid\n  }));\n\n// Retornar um item por instância válida\nreturn instanciasValidas.map(inst => ({\n  json: inst\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        320
+      ],
+      "id": "03951aa9-3b00-4b32-bccd-71d42ee4948c",
+      "name": "Validar Instancias"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Entrada: $input.item.json deve conter o array com os campos 'ownerJid' e 'name'.\n\n// Use IIFE para encapsular a lógica e retornar o resultado\nreturn (() => {\n    const inputData = $input.item.json; // Dados de entrada do nó\n    const ownerJids = inputData.ownerJid; // Array de ownerJid\n    const names = inputData.name; // Array de names\n\n    // Array de saída onde vamos armazenar os pares\n    const outputArray = [];\n\n    // Verifica se os tamanhos dos arrays correspondem\n    if (ownerJids.length !== names.length) {\n        throw new Error(\"Os arrays 'ownerJid' e 'name' devem ter o mesmo tamanho.\");\n    }\n\n    // Itera sobre cada nome e associa com os ownerJids de outros nomes\n    names.forEach((name, index) => {\n        const excludedJid = ownerJids[index]; // O 'ownerJid' a ser excluído\n        ownerJids.forEach((jid, jidIndex) => {\n            if (jidIndex !== index) { // Exclui o próprio 'ownerJid'\n                outputArray.push({\n                    name: name, \n                    ownerJid: jid \n                });\n            }\n        });\n    });\n\n    return outputArray; // Retorna o array final para o próximo nó\n})();\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        320
+      ],
+      "id": "926d6a62-c7d9-49ae-b42c-57b0726380e5",
+      "name": "Gerar Combinações"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Pegar Instancias": {
+      "main": [
+        [
+          {
+            "node": "Validar Instancias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Gerar Intervalo Aleatório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Gerar Combinações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gerador de Mensagem",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "DADOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DADOS": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Gerador de Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook do Aquecedor": {
+      "main": [
+        [
+          {
+            "node": "Não mexer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Intervalo Aleatório": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerador de Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Enviar Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Não mexer": {
+      "main": [
+        [
+          {
+            "node": "Pegar Instancias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Instancias": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Combinações": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fcf09055-448c-4507-b0ee-a9b22d071660",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "88a5dae02c3e3a4a9184290b939f81819d23d38a333d31f8b84bc5f63f2a14fc"
+  },
+  "id": "GNOX8U1ezZYa8mxz",
+  "tags": [
+    {
+      "createdAt": "2025-07-31T02:55:19.692Z",
+      "updatedAt": "2025-07-31T02:55:19.692Z",
+      "id": "adOrjy0WHyNvEpUh",
+      "name": "Wesley Cardoso"
+    },
+    {
+      "createdAt": "2025-07-31T02:55:19.699Z",
+      "updatedAt": "2025-08-08T13:23:48.015Z",
+      "id": "Gg8NCQ3OV8XcZP30",
+      "name": "Eduardo Fernandes"
+    }
+  ]
+}

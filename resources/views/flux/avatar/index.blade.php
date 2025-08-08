@@ -171,7 +171,7 @@ $label = $alt ?? $name;
 <flux:with-tooltip :$tooltip :$attributes>
     <flux:button-or-link :attributes="$attributes->class($classes)->merge($circle ? ['data-circle' => 'true'] : [])" :$as :$href data-flux-avatar data-slot="avatar" data-size="{{ $size }}">
         <?php if ($src): ?>
-            <img src="{{ $src }}" alt="{{ $alt ?? $name }}" class="rounded-[var(--avatar-radius)]">
+            <div class="rounded-[var(--avatar-radius)] bg-gray-300 flex items-center justify-center text-2xl">👤</div>
         <?php elseif ($icon): ?>
             <flux:icon :name="$icon" :variant="$iconVariant" :class="$iconClasses" />
         <?php elseif ($hasTextContent): ?>

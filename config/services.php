@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'apify' => [
+        'token' => env('APIFY_TOKEN'),
+        'google_maps_actor_id' => env('APIFY_GOOGLE_MAPS_ACTOR_ID', 'compass~crawler-google-places'),
+    ],
+
+    'supabase' => [
+        'url' => env('SUPABASE_URL'),
+        'key' => env('SUPABASE_ANON_KEY'),
+        'bucket' => env('SUPABASE_BUCKET', 'user-files'),
+    ],
+
 ];

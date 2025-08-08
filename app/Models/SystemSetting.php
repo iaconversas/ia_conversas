@@ -120,5 +120,7 @@ class SystemSetting extends Model
         if (isset($settings['n8n_url'])) {
             self::set('n8n_webhook_url', $settings['n8n_url'], 'string', 'URL base do n8n para webhooks');
         }
+        
+
     }
 }

@@ -21,10 +21,24 @@ class EvolutionApiService
     }
 
     /**
-     * Obter configurações para uso no frontend
+     * Obter configurações para uso no frontend (sem expor chaves sensíveis)
      */
     public function getConfig()
     {
+        $settings = SystemSetting::getEvolutionSettings();
+        return [
+            'evolution_url' => $this->apiUrl,
+            'n8n_url' => $this->n8nUrl,
+            'has_evolution_api_key' => !empty($this->apiKey),
+        ];
+    }
+
+    /**
+     * Obter configurações completas (apenas para uso interno no backend)
+     */
+    public function getFullConfig()
+    {
+        $settings = SystemSetting::getEvolutionSettings();
         return [
             'evolution_url' => $this->apiUrl,
             'evolution_api_key' => $this->apiKey,
@@ -64,7 +78,13 @@ class EvolutionApiService
      */
     public function fetchInstances()
     {
-        return $this->makeRequest('/instance/fetchInstances');
+        $result = $this->makeRequest('/instance/fetchInstances');
+        
+        if ($result['success'] && isset($result['data'])) {
+            return $result['data'];
+        }
+        
+        return [];
     }
 
     /**
@@ -72,10 +92,12 @@ class EvolutionApiService
      */
     public function createInstance(string $instanceName)
     {
-        return $this->makeRequest('/instance/create', 'POST', [
+        $result = $this->makeRequest('/instance/create', 'POST', [
             'instanceName' => $instanceName,
             'token' => $this->apiKey,
         ]);
+        
+        return $result;
     }
 
     /**
@@ -136,6 +158,18 @@ class EvolutionApiService
     }
 
     /**
+     * Configurar webhook
+     */
+    public function setWebhook(string $instanceName, string $webhookUrl)
+    {
+        return $this->updateWebhook($instanceName, $webhookUrl);
+    }
+
+
+
+
+
+    /**
      * Fazer requisição para o n8n
      */
     public function makeN8nRequest(string $endpoint, string $method = 'POST', array $data = [])
@@ -160,4 +194,93 @@ class EvolutionApiService
             ];
         }
     }
+
+
+
+
+
+    /**
+     * Enviar mensagem de texto
+     */
+    public function sendTextMessage(string $instanceName, string $number, string $text)
+    {
+        $encodedInstanceName = urlencode($instanceName);
+        
+        $result = $this->makeRequest("/message/sendText/{$encodedInstanceName}", 'POST', [
+            'number' => $number,
+            'text' => $text
+        ]);
+        
+        if (!$result['success']) {
+            Log::error("Erro ao enviar mensagem de texto para {$number} via {$instanceName}: " . ($result['error'] ?? 'Erro desconhecido'));
+            throw new \Exception($result['error'] ?? 'Erro ao enviar mensagem de texto');
+        }
+        
+        return $result['data'];
+    }
+
+    /**
+     * Enviar mensagem de imagem
+     */
+    public function sendImageMessage(string $instanceName, string $number, string $imageUrl)
+    {
+        $encodedInstanceName = urlencode($instanceName);
+        
+        $result = $this->makeRequest("/message/sendMedia/{$encodedInstanceName}", 'POST', [
+            'number' => $number,
+            'mediatype' => 'image',
+            'media' => $imageUrl
+        ]);
+        
+        if (!$result['success']) {
+            Log::error("Erro ao enviar mensagem de imagem para {$number} via {$instanceName}: " . ($result['error'] ?? 'Erro desconhecido'));
+            throw new \Exception($result['error'] ?? 'Erro ao enviar mensagem de imagem');
+        }
+        
+        return $result['data'];
+    }
+
+    /**
+     * Enviar mensagem de áudio
+     */
+    public function sendAudioMessage(string $instanceName, string $number, string $audioUrl)
+    {
+        $encodedInstanceName = urlencode($instanceName);
+        
+        $result = $this->makeRequest("/message/sendMedia/{$encodedInstanceName}", 'POST', [
+            'number' => $number,
+            'mediatype' => 'audio',
+            'media' => $audioUrl
+        ]);
+        
+        if (!$result['success']) {
+            Log::error("Erro ao enviar mensagem de áudio para {$number} via {$instanceName}: " . ($result['error'] ?? 'Erro desconhecido'));
+            throw new \Exception($result['error'] ?? 'Erro ao enviar mensagem de áudio');
+        }
+        
+        return $result['data'];
+    }
+
+    /**
+     * Enviar mensagem de vídeo
+     */
+    public function sendVideoMessage(string $instanceName, string $number, string $videoUrl)
+    {
+        $encodedInstanceName = urlencode($instanceName);
+        
+        $result = $this->makeRequest("/message/sendMedia/{$encodedInstanceName}", 'POST', [
+            'number' => $number,
+            'mediatype' => 'video',
+            'media' => $videoUrl
+        ]);
+        
+        if (!$result['success']) {
+            Log::error("Erro ao enviar mensagem de vídeo para {$number} via {$instanceName}: " . ($result['error'] ?? 'Erro desconhecido'));
+            throw new \Exception($result['error'] ?? 'Erro ao enviar mensagem de vídeo');
+        }
+        
+        return $result['data'];
+    }
+    
+
 }

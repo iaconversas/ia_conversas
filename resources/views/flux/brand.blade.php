@@ -24,7 +24,7 @@ $textClasses = Flux::classes()
         <?php else: ?>
             <div class="flex items-center justify-center h-6 rounded-sm overflow-hidden shrink-0">
                 <?php if ($logo): ?>
-                    <img src="{{ $logo }}" alt="{{ $alt }}" class="h-6" />
+                    <div class="h-6 flex items-center justify-center text-lg font-bold">🏢</div>
                 <?php else: ?>
                     {{ $slot }}
                 <?php endif; ?>
@@ -42,7 +42,7 @@ $textClasses = Flux::classes()
         <?php else: ?>
             <div class="flex items-center justify-center h-6 rounded-sm overflow-hidden shrink-0">
                 <?php if ($logo): ?>
-                    <img src="{{ $logo }}" alt="{{ $alt }}" class="h-6" />
+                    <div class="h-6 flex items-center justify-center text-lg font-bold">🏢</div>
                 <?php else: ?>
                     {{ $slot }}
                 <?php endif; ?>

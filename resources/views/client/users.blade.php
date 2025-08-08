@@ -1,10 +1,8 @@
 <x-layouts.app title="Client - Users">
-<div class="space-y-6">
     <flux:heading size="xl">Usuários do Sistema</flux:heading>
     <flux:subheading>Todos os usuários cadastrados no sistema</flux:subheading>
-    </flux:header>
 
-    <div class="space-y-6">
+    <div class="mt-6 space-y-6">
         <!-- User Statistics -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
@@ -117,21 +115,6 @@
         </flux:card>
         @endif
 
-        <!-- Permissions Summary -->
-        <flux:card :padding="false">
-            <flux:card.header>
-                <flux:heading size="lg">Your Permissions</flux:heading>
-                <flux:subheading>What you can do in this tenant</flux:subheading>
-            </flux:card.header>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-6">
-                @foreach(auth()->user()->getAllPermissions() as $permission)
-                    <div class="flex items-center space-x-2 p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-                        <flux:icon.check class="h-4 w-4 text-green-500" />
-                        <span class="text-sm font-medium">{{ $permission->name }}</span>
-                    </div>
-                @endforeach
-            </div>
-        </flux:card>
+
     </div>
 </x-layouts.app>

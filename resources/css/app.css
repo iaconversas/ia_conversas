@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
+@import './figma-styles.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -23,14 +24,14 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-accent: var(--color-neutral-800);
+    --color-accent: #155DFC;
     --color-accent-content: var(--color-neutral-800);
     --color-accent-foreground: var(--color-white);
 }
 
 @layer theme {
     .dark {
-        --color-accent: var(--color-white);
+        --color-accent: #155DFC;
         --color-accent-content: var(--color-white);
         --color-accent-foreground: var(--color-neutral-800);
     }
@@ -44,6 +45,92 @@
     ::backdrop,
     ::file-selector-button {
         border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+/* Custom Button Styles */
+@layer components {
+    /* Primary Button - Light Mode */
+    [data-flux-button][data-variant="primary"] {
+        border-radius: 70px !important;
+        background: #155DFC !important;
+        box-shadow: none !important;
+        border: none !important;
+        color: white !important;
+    }
+    
+    /* Override Tailwind rounded classes for buttons */
+    [data-flux-button].rounded-lg,
+    [data-flux-button].rounded-md {
+        border-radius: 70px !important;
+    }
+    
+    /* Primary Button - Dark Mode */
+    .dark [data-flux-button][data-variant="primary"] {
+        border-radius: 70px !important;
+        background: #155DFC !important;
+        box-shadow: 5px 5px 21.9px 0 rgba(21, 93, 252, 0.20) !important;
+        border: none !important;
+        color: white !important;
+    }
+    
+    /* Outline Button - Light Mode */
+    [data-flux-button][data-variant="outline"] {
+        border-radius: 30px !important;
+        border: 2px solid #155DFC !important;
+        background: transparent !important;
+        color: #155DFC !important;
+    }
+    
+    /* Outline Button - Dark Mode */
+    .dark [data-flux-button][data-variant="outline"] {
+        border-radius: 30px !important;
+        border: 2px solid #155DFC !important;
+        background: transparent !important;
+        color: #155DFC !important;
+        box-shadow: 0 0 10px rgba(21, 93, 252, 0.15) !important;
+    }
+    
+    /* Hover States */
+    [data-flux-button][data-variant="primary"]:hover {
+        background: #0d47d1 !important;
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+    
+    [data-flux-button][data-variant="outline"]:hover {
+        background: rgba(21, 93, 252, 0.1) !important;
+        transform: translateY(-1px);
+        transition: all 0.2s ease;
+    }
+    
+    .dark [data-flux-button][data-variant="primary"]:hover {
+        background: #0d47d1 !important;
+        box-shadow: 5px 5px 25px 0 rgba(21, 93, 252, 0.30) !important;
+    }
+    
+    .dark [data-flux-button][data-variant="outline"]:hover {
+        background: rgba(21, 93, 252, 0.15) !important;
+        box-shadow: 0 0 15px rgba(21, 93, 252, 0.25) !important;
+    }
+    
+    /* Danger Button - Light and Dark Mode */
+    [data-flux-button][data-variant="danger"] {
+        border-radius: 30px !important;
+    }
+    
+    .dark [data-flux-button][data-variant="danger"] {
+        border-radius: 30px !important;
+    }
+    
+    /* Buttons using --color-accent variable - Light Mode (no shadow) */
+    [data-flux-button] {
+        box-shadow: none !important;
+    }
+    
+    /* Buttons using --color-accent variable - Dark Mode (with shadow) */
+    .dark [data-flux-button] {
+        box-shadow: 5px 5px 21.9px 0 rgba(21, 93, 252, 0.20) !important;
     }
 }
 

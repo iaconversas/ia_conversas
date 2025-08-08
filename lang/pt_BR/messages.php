@@ -1,0 +1,8 @@
+<?php
+
+return [
+    'Choose file' => 'Escolher arquivo',
+    'Choose files' => 'Escolher arquivos',
+    'No file chosen' => 'Nenhum arquivo selecionado',
+    'files' => 'arquivos',
+];

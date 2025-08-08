@@ -1,13 +1,12 @@
 <x-layouts.app>
-    <div class="space-y-6">
+    <flux:heading size="xl">Configurações da Evolution API</flux:heading>
+    <flux:subheading>Gerencie as configurações de conexão com a Evolution API e n8n</flux:subheading>
+    
+    <div class="mt-6 space-y-6">
         <div class="flex items-center justify-between">
-            <div>
-                <flux:heading size="xl">Configurações da Evolution API</flux:heading>
-                <flux:subheading>Gerencie as configurações de conexão com a Evolution API e n8n</flux:subheading>
-            </div>
+            <div></div>
             
             <div class="flex items-center space-x-2">
-                <div class="flex items-center space-x-2">
                     @if($isConfigured)
                         <flux:badge color="green" size="sm">
                             <flux:icon.check-circle class="size-4" />
@@ -40,7 +39,7 @@
         @endif
 
         <!-- Status das Configurações -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <flux:card>
                 <div class="flex items-center space-x-3">
                     <div class="p-2 rounded-lg {{ !empty($evolutionSettings['api_url']) ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600' }}">
@@ -97,6 +96,8 @@
                     </div>
                 @endif
             </flux:card>
+
+
         </div>
 
         <!-- Formulário de Configuração -->
@@ -145,20 +146,22 @@
                 </div>
 
                 <flux:field>
-                    <flux:label for="evolution_api_key">API Key da Evolution *</flux:label>
-                    <flux:input 
-                        id="evolution_api_key" 
-                        name="evolution_api_key" 
-                        type="password"
-                        placeholder="Digite sua API Key"
-                        value="{{ old('evolution_api_key', $evolutionSettings['api_key']) }}"
-                        required
-                    />
-                    <flux:description>Chave de API para autenticação com a Evolution API</flux:description>
-                    @error('evolution_api_key')
-                        <flux:error>{{ $message }}</flux:error>
-                    @enderror
-                </flux:field>
+                        <flux:label for="evolution_api_key">API Key da Evolution *</flux:label>
+                        <flux:input 
+                            id="evolution_api_key" 
+                            name="evolution_api_key" 
+                            type="password"
+                            placeholder="Digite sua API Key"
+                            value="{{ old('evolution_api_key', $evolutionSettings['api_key']) }}"
+                            required
+                        />
+                        <flux:description>Chave de API para autenticação com a Evolution API</flux:description>
+                        @error('evolution_api_key')
+                            <flux:error>{{ $message }}</flux:error>
+                        @enderror
+                    </flux:field>
+
+
 
                 <div class="flex items-center justify-between pt-4 border-t">
                     <div class="text-sm text-gray-600 dark:text-gray-400">
